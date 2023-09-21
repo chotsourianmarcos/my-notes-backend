@@ -1,0 +1,71 @@
+﻿using Data;
+using Entities.Items;
+using Logic.ILogic;
+using Microsoft.EntityFrameworkCore;
+
+namespace Logic.Logic
+{
+    public class TagLogic : ITagLogic
+    {
+        private readonly ServiceContext _serviceContext;
+        public TagLogic(ServiceContext serviceContext) 
+        {
+            _serviceContext = serviceContext;
+        }
+
+        public async Task<List<TagItem>> SetCurrentTags(List<TagItem> tagList)
+        {
+            var allTags = await _serviceContext.Tags.ToListAsync();
+            var existingTagsList = allTags.Where(c => tagList.Select(t => t.Name).Contains(c.Name)).ToList();
+
+            foreach(var t in tagList)
+            {
+                if(!existingTagsList.Select(e => e.Name).Contains(t.Name))
+                {
+                    existingTagsList.Add(t);
+                }
+            }
+
+            return existingTagsList;
+        }
+
+        public async Task<List<TagItem>> AssignTagsByNames(List<string> tagNames)
+        {
+            var currentTags = await _serviceContext.Tags.Where(t => tagNames.Contains(t.Name)).ToListAsync();
+
+            foreach(var n in tagNames)
+            {
+                if(currentTags.Any(t => t.Name == n))
+                {
+                    continue;
+                }
+                else
+                {
+                    var newTag = new TagItem();
+                    newTag.IdWeb = Guid.NewGuid();
+                    newTag.Name = n;
+                    currentTags.Add(newTag);
+                }
+            }
+
+            return currentTags;
+        }
+
+        public async Task<List<string>> GetAllTags()
+        {
+            var allTags = await _serviceContext.Tags.ToListAsync();
+            var userTags = new List<TagItem>();
+            foreach(var t in allTags)
+            {
+               var tagUsed = await _serviceContext.Notes
+                                        .Where(n => n.IsActive && n.Tags.Contains(t) && n.UserId == UserSessionLogic.GetCurrentUserId())
+                                        .FirstOrDefaultAsync();
+                if (tagUsed != null)
+                {
+                    userTags.Add(t);
+                }
+            }
+            return userTags.Select(t => t.Name).ToList();
+        }
+    }
+}
