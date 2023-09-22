@@ -14,8 +14,7 @@
 <p>Filter notes by category</p>
 <p>User registration and login</p>
 <p>Layered, maintainable and extensible architecture. Both in backend and frontend.</p>
-<p>Live deployed version in https://my-notes-mc-frontend-a0fc6ad0aa34.herokuapp.com/</p>
-<p>Satisfying UX / UI design and responsiveness</p>
+<p>UX/UI design and responsiveness</p>
 <p>Frontend hosted in https://my-notes-mc-frontend-a0fc6ad0aa34.herokuapp.com</p>
 
 <h3>Further objectives</h3>
