@@ -5,6 +5,7 @@ using Entities.Entities;
 using Entities.Items;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Reflection;
 
 namespace Data
 {
@@ -17,34 +18,12 @@ namespace Data
         public DbSet<NoteItem> Notes { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            builder.Entity<UserRolItem>(e =>
-            {
-                e.ToTable("t_user_rols");
-                e.Property(e => e.Id).ValueGeneratedNever();
-            });
-
-            builder.Entity<UserItem>(e =>
-            {
-                e.ToTable("t_users");
-                e.HasOne<UserRolItem>().WithMany().HasForeignKey(u => u.RolId);
-            });
-
-            builder.Entity<TagItem>(e =>
-            {
-                e.ToTable("t_tags");
-            });
-
-            builder.Entity<NoteItem>(e =>
-            {
-                e.ToTable("t_notes");
-                e.HasOne<UserItem>(e => e.User).WithMany(u => u.Notes).HasForeignKey(n => n.UserId).HasConstraintName("FK_t_notes_t_users_UserId");
-                e.HasMany<TagItem>(e => e.Tags).WithMany().UsingEntity(join => join.ToTable("notes_tags"));
-            });
-
             foreach (var relationship in builder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
             {
                 relationship.DeleteBehavior = DeleteBehavior.NoAction;
             }
+
+            builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
         }
     }
     public class ServiceContextFactory : IDesignTimeDbContextFactory<ServiceContext>
