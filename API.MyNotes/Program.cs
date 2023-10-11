@@ -8,14 +8,18 @@ using Logic.Logic;
 using API.MyNotes.Services;
 using API.MyNotes.IServices;
 
+var AllowWebUIOrigin = "_allowWebUIOrigin";
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(
+    var webUIHostURL = builder.Configuration.GetValue<string>("WebUIHost");
+    options.AddPolicy(AllowWebUIOrigin,
         policy =>
         {
-            policy.WithOrigins("*").AllowAnyMethod().AllowAnyHeader();
+            policy.WithOrigins(webUIHostURL)
+            .AllowAnyMethod().AllowAnyHeader();
         });
 });
 
@@ -87,7 +91,7 @@ app.Use(async (context, next) => {
 
 //app.UseHttpsRedirection();
 
-app.UseCors();
+app.UseCors(AllowWebUIOrigin);
 
 app.MapControllers();
 
