@@ -7,6 +7,7 @@ using Logic.ILogic;
 using Logic.Logic;
 using API.MyNotes.Services;
 using API.MyNotes.IServices;
+using API.MyNotes.Dependencies;
 
 var AllowWebUIOrigin = "_allowWebUIOrigin";
 
@@ -55,16 +56,8 @@ builder.Services.AddSwaggerGen(opt =>
 
 builder.Services.AddDbContext<ServiceContext>(
         options => options.UseNpgsql("name=ConnectionStrings:ServiceContext"));
-
-builder.Services.AddScoped<IUserSecurityLogic, UserSecurityLogic>();
-builder.Services.AddScoped<IUserLogic, UserLogic>();
-builder.Services.AddScoped<INoteLogic, NoteLogic>();
-builder.Services.AddScoped<ITagLogic, TagLogic>();
-
-builder.Services.AddScoped<IUserSecurityService, UserSecurityService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<INoteService, NoteService>();
-builder.Services.AddScoped<ITagService, TagService>();
+builder.Services.AddLogicServices();
+builder.Services.AddAPIServices();
 
 var app = builder.Build();
 
