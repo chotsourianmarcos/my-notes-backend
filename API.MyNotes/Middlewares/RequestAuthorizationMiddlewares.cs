@@ -8,17 +8,14 @@ namespace API.Middlewares
     public class RequestAuthorizationMiddleware : UserSessionLogic
     {
         private readonly RequestDelegate _next;
-        private IUserSecurityService _userSecurityService;
 
         public RequestAuthorizationMiddleware(RequestDelegate next)
         {
             _next = next;
         }
 
-        public async Task Invoke(HttpContext httpContext, IUserSecurityService userSecurityService)
+        public async Task InvokeAsync(HttpContext httpContext, IUserSecurityService userSecurityService)
         {
-            _userSecurityService = userSecurityService;
-
             SetCurrentUserId(0);
             SetCurrentUserIdWeb(Guid.Empty);
             SetCurrentUserIdRol(0);
@@ -35,7 +32,7 @@ namespace API.Middlewares
                 }
                 else
                 {
-                    var validationResponse = await _userSecurityService.ValidateUserToken(httpContext.Request.Headers.Authorization.ToString(),
+                    var validationResponse = await userSecurityService.ValidateUserToken(httpContext.Request.Headers.Authorization.ToString(),
                                                  authorization.Values.AllowedUserRols);
 
                     if (!validationResponse.Validated)

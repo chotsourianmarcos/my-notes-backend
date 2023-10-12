@@ -2,6 +2,7 @@
 using Entities.Items;
 using Logic.ILogic;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace Logic.Logic
 {
@@ -53,18 +54,23 @@ namespace Logic.Logic
 
         public async Task<List<string>> GetAllTags()
         {
-            var allTags = await _serviceContext.Tags.ToListAsync();
+            var allNotes = await _serviceContext.Notes
+                .Where(n => n.UserId == UserSessionLogic.GetCurrentUserId() && n.IsActive)
+                .Include(n => n.Tags)
+                .ToListAsync();
             var userTags = new List<TagItem>();
-            foreach(var t in allTags)
+
+            foreach(var n in allNotes)
             {
-               var tagUsed = await _serviceContext.Notes
-                                        .Where(n => n.IsActive && n.Tags.Contains(t) && n.UserId == UserSessionLogic.GetCurrentUserId())
-                                        .FirstOrDefaultAsync();
-                if (tagUsed != null)
+                foreach(var t in n.Tags)
                 {
-                    userTags.Add(t);
+                    if (!userTags.Contains(t))
+                    {
+                        userTags.Add(t);
+                    }
                 }
             }
+
             return userTags.Select(t => t.Name).ToList();
         }
     }

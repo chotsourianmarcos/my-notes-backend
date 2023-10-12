@@ -30,10 +30,6 @@ namespace API.Controllers
             catch (ControlledException ex)
             {
                 return ex.ToObjectResult();
-            }catch(Exception ex)
-            {
-                var asd = 0;
-                throw ex;
             }
         }
         [EndpointAuthorize(AllowsAnonymous = true)]

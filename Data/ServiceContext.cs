@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Entities.Entities;
 using Entities.Items;
@@ -22,21 +21,6 @@ namespace Data
             }
 
             builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
-        }
-    }
-    public class ServiceContextFactory : IDesignTimeDbContextFactory<ServiceContext>
-    {
-        public ServiceContext CreateDbContext(string[] args)
-        {
-            var builder = new ConfigurationBuilder()
-                   .SetBasePath(Directory.GetCurrentDirectory())
-                   .AddJsonFile("appsettings.json", false, true);
-            var config = builder.Build();
-            var connectionString = config.GetConnectionString("ServiceContext");
-            var optionsBuilder = new DbContextOptionsBuilder<ServiceContext>();
-            optionsBuilder.UseNpgsql(config.GetConnectionString("ServiceContext"));
-
-            return new ServiceContext(optionsBuilder.Options);
         }
     }
 }

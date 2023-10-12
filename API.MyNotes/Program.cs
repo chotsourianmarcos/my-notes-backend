@@ -57,7 +57,8 @@ builder.Services.AddSwaggerGen(opt =>
 });
 
 builder.Services.AddDbContext<ServiceContext>(
-        options => options.UseNpgsql("name=ConnectionStrings:ServiceContext"));
+        options => options.UseNpgsql("name=ConnectionStrings:ServiceContext"),
+        ServiceLifetime.Transient);
 builder.Services.AddLogicServices();
 builder.Services.AddAPIServices();
 
@@ -76,15 +77,7 @@ if (app.Environment.IsProduction())
     app.Urls.Add($"http://*:{port}");
 }
 
-//app.Use(async (context, next) => {
-//    var serviceScope = app.Services.CreateScope();
-//    var userSecurityService = serviceScope.ServiceProvider.GetRequiredService<IUserSecurityService>();
-//    var requestAuthorizationMiddleware = new RequestAuthorizationMiddleware(userSecurityService);
-//    await requestAuthorizationMiddleware.ValidateRequestAutorizathion(context);
-//    await next();
-//});
-
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 app.UseCors(AllowWebUIOrigin);
 
