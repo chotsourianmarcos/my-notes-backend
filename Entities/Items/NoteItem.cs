@@ -1,4 +1,5 @@
 ﻿using Entities.Entities;
+using System.Text.Json.Serialization;
 
 namespace Entities.Items
 {
@@ -10,9 +11,8 @@ namespace Entities.Items
         public int Id { get; set; }
         public Guid IdWeb { get; set; }
         public int UserId { get; set; }
-        //[JsonIgnore]
+        [JsonIgnore]
         public virtual UserItem User { get; set; }
-        //[JsonIgnore]
         public virtual ICollection<TagItem> Tags { get; set; }
         public string Content { get; set; }
         public bool IsArchived { get; set; }

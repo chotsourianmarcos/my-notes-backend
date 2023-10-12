@@ -7,38 +7,56 @@ namespace API.Middlewares
 {
     public class RequestAuthorizationMiddleware : UserSessionLogic
     {
-        private readonly IUserSecurityService _userSecurityService;
-        public RequestAuthorizationMiddleware(IUserSecurityService userSecurityService)
+        private readonly RequestDelegate _next;
+        private IUserSecurityService _userSecurityService;
+
+        public RequestAuthorizationMiddleware(RequestDelegate next)
+        {
+            _next = next;
+        }
+
+        public async Task Invoke(HttpContext httpContext, IUserSecurityService userSecurityService)
         {
             _userSecurityService = userSecurityService;
-        }
-        public async Task ValidateRequestAutorizathion(HttpContext context)
-        {
+
             SetCurrentUserId(0);
             SetCurrentUserIdWeb(Guid.Empty);
             SetCurrentUserIdRol(0);
-            if (context.Request.Method == "OPTIONS")
+
+            if (httpContext.Request.Method == "OPTIONS")
             {
-                return;
-            }
-
-            EndpointAuthorizeAttribute authorization = new EndpointAuthorizeAttribute(context);
-
-            if (authorization.Values.AllowsAnonymous)
+                await _next(httpContext);
+            }else
             {
-                return;
-            }
-
-            var validationResponse = await _userSecurityService.ValidateUserToken(context.Request.Headers.Authorization.ToString(),
+                EndpointAuthorizeAttribute authorization = new EndpointAuthorizeAttribute(httpContext);
+                if (authorization.Values.AllowsAnonymous)
+                {
+                    await _next(httpContext);
+                }
+                else
+                {
+                    var validationResponse = await _userSecurityService.ValidateUserToken(httpContext.Request.Headers.Authorization.ToString(),
                                                  authorization.Values.AllowedUserRols);
 
-            if (!validationResponse.Validated)
-            {
-                throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
+                    if (!validationResponse.Validated)
+                    {
+                        throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
+                    }
+
+                    SetCurrentUserId(validationResponse.UserId);
+                    SetCurrentUserIdWeb(validationResponse.UserIdWeb);
+                    SetCurrentUserIdRol(validationResponse.UserIdRol);
+
+                    await _next(httpContext);
+                }
             }
-            SetCurrentUserId(validationResponse.UserId);
-            SetCurrentUserIdWeb(validationResponse.UserIdWeb);
-            SetCurrentUserIdRol(validationResponse.UserIdRol);
+        }
+    }
+    public static class RequestAuthorizationMiddlewareExtensions
+    {
+        public static IApplicationBuilder UseRequestAuthorizationMiddleware(this IApplicationBuilder builder)
+        {
+            return builder.UseMiddleware<RequestAuthorizationMiddleware>();
         }
     }
 }

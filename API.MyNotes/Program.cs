@@ -1,13 +1,9 @@
-using API.IServices;
 using Data;
 using Microsoft.EntityFrameworkCore;
-using API.Middlewares;
 using Microsoft.OpenApi.Models;
-using Logic.ILogic;
-using Logic.Logic;
-using API.MyNotes.Services;
-using API.MyNotes.IServices;
 using API.MyNotes.Dependencies;
+using API.Middlewares;
+using Newtonsoft.Json;
 
 var AllowWebUIOrigin = "_allowWebUIOrigin";
 
@@ -25,6 +21,12 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
+//ver esto luego. y ver si dejo el paquete o no.
+//builder.Services.AddControllers().AddNewtonsoftJson(o =>
+//{
+//    o.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+//});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opt =>
 {
@@ -74,18 +76,20 @@ if (app.Environment.IsProduction())
     app.Urls.Add($"http://*:{port}");
 }
 
-app.Use(async (context, next) => {
-    var serviceScope = app.Services.CreateScope();
-    var userSecurityService = serviceScope.ServiceProvider.GetRequiredService<IUserSecurityService>();
-    var requestAuthorizationMiddleware = new RequestAuthorizationMiddleware(userSecurityService);
-    await requestAuthorizationMiddleware.ValidateRequestAutorizathion(context);
-    await next();
-});
+//app.Use(async (context, next) => {
+//    var serviceScope = app.Services.CreateScope();
+//    var userSecurityService = serviceScope.ServiceProvider.GetRequiredService<IUserSecurityService>();
+//    var requestAuthorizationMiddleware = new RequestAuthorizationMiddleware(userSecurityService);
+//    await requestAuthorizationMiddleware.ValidateRequestAutorizathion(context);
+//    await next();
+//});
 
 //app.UseHttpsRedirection();
 
 app.UseCors(AllowWebUIOrigin);
 
 app.MapControllers();
+
+app.UseRequestAuthorizationMiddleware();
 
 app.Run();
