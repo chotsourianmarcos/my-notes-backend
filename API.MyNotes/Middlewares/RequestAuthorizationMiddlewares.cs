@@ -8,15 +8,13 @@ namespace API.Middlewares
     public class RequestAuthorizationMiddleware : UserSessionLogic
     {
         private readonly RequestDelegate _next;
-
         public RequestAuthorizationMiddleware(RequestDelegate next)
         {
             _next = next;
         }
-
         public async Task InvokeAsync(HttpContext httpContext, IUserSecurityService userSecurityService)
         {
-            SetCurrentUserId(0);
+            SetCurrentUserName("");
             SetCurrentUserIdWeb(Guid.Empty);
             SetCurrentUserIdRol(0);
 
@@ -32,7 +30,7 @@ namespace API.Middlewares
                 }
                 else
                 {
-                    var validationResponse = await userSecurityService.ValidateUserToken(httpContext.Request.Headers.Authorization.ToString(),
+                    var validationResponse = userSecurityService.AuthenticateJWTToken(httpContext.Request.Headers.Authorization.ToString(),
                                                  authorization.Values.AllowedUserRols);
 
                     if (!validationResponse.Validated)
@@ -40,9 +38,9 @@ namespace API.Middlewares
                         throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
                     }
 
-                    SetCurrentUserId(validationResponse.UserId);
-                    SetCurrentUserIdWeb(validationResponse.UserIdWeb);
-                    SetCurrentUserIdRol(validationResponse.UserIdRol);
+                    SetCurrentUserName(validationResponse.UserData.UserName);
+                    SetCurrentUserIdWeb(validationResponse.UserData.UserIdWeb);
+                    SetCurrentUserIdRol(validationResponse.UserData.UserIdRol);
 
                     await _next(httpContext);
                 }

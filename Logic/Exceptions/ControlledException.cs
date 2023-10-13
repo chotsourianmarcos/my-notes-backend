@@ -1,5 +1,4 @@
-﻿using Entities.Models.Responses;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace Logic.Exceptions
 {

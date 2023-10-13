@@ -12,32 +12,32 @@ namespace API.MyNotes.Services
         {
             _userSecurityLogic = userSecurityLogic;
         }
-        public async Task<LoginResponse> GenerateAuthorizationToken(string userName, string userPassword)
+        public async Task<LoginResponse> GenerateAccessBearerToken(string userName, string userPassword)
         {
-            return await _userSecurityLogic.GenerateAuthorizationTokenAsync(userName, userPassword);
+            return await _userSecurityLogic.GenerateAuthenticationBearerTokenAsync(userName, userPassword);
         }
-        public async Task<ValidateTokenResponse> ValidateUserToken(string authorization, List<string> allowedUserRols)
+        public AuthenticationTokenResponse AuthenticateJWTToken(string authorization, List<string> allowedUserRols)
         {
-            ValidateBearerAuthorization(authorization);
-            var userName = GetUserNameFromBearerAuthorization(authorization);
-            var token = GetTokenFromBearerAuthorization(authorization, userName);
-            return await _userSecurityLogic.ValidateUserTokenAsync(userName, token, allowedUserRols);
+            //ValidateBearerAuthorization(authorization);
+            //var userName = GetUserNameFromBearerAuthorization(authorization);
+            //var token = GetTokenFromBearerAuthorization(authorization, userName);
+            return _userSecurityLogic.AuthenticateJWTToken(authorization);
         }
-        private void ValidateBearerAuthorization(string authorization)
-        {
-            if (authorization.Length < 50 || !authorization.Contains(':'))
-            {
-                throw new BadRequestException(BadRequestExceptionType.InvalidOperation);
-            }
-        }
-        private string GetUserNameFromBearerAuthorization(string authorization)
-        {
-            var indexToSplit = authorization.IndexOf(':');
-            return authorization.Substring(7, indexToSplit - 7);
-        }
-        private string GetTokenFromBearerAuthorization(string authorization, string userName)
-        {
-            return authorization.Split(':')[1];
-        }
+        //private void ValidateBearerAuthorization(string authorization)
+        //{
+        //    if (authorization.Length < 50 || !authorization.Contains(':'))
+        //    {
+        //        throw new BadRequestException(BadRequestExceptionType.InvalidOperation);
+        //    }
+        //}
+        //private string GetUserNameFromBearerAuthorization(string authorization)
+        //{
+        //    var indexToSplit = authorization.IndexOf(':');
+        //    return authorization.Substring(7, indexToSplit - 7);
+        //}
+        //private string GetTokenFromBearerAuthorization(string authorization, string userName)
+        //{
+        //    return authorization.Split(':')[1];
+        //}
     }
 }

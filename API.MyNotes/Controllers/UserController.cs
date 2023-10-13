@@ -38,7 +38,7 @@ namespace API.Controllers
         {
             try
             {
-                LoginResponse response = await _userSecurityService.GenerateAuthorizationToken(loginRequest.UserName, loginRequest.UserPassword);
+                LoginResponse response = await _userSecurityService.GenerateAccessBearerToken(loginRequest.UserName, loginRequest.UserPassword);
                 return Ok(response);
             }
             catch (ControlledException ex)

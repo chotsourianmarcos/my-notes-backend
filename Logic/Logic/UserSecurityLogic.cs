@@ -1,17 +1,27 @@
 ﻿using Data;
+using Entities.Entities;
+using Entities.Enums;
 using Entities.Models.Responses;
 using Logic.Exceptions;
 using Logic.ILogic;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Security.Principal;
+using System.Text;
 
 namespace Logic.Logic
 {
     public class UserSecurityLogic : IUserSecurityLogic
     {
+        private readonly IConfiguration _config;
         private readonly ServiceContext _serviceContext;
-        public UserSecurityLogic(ServiceContext serviceContext)
+        public UserSecurityLogic(IConfiguration config, ServiceContext serviceContext)
         {
+            _config = config;
             _serviceContext = serviceContext;
         }
         public string HashString(string key)
@@ -22,7 +32,51 @@ namespace Logic.Logic
         {
             return BCrypt.Net.BCrypt.Verify(key, hash);
         }
-        public async Task<LoginResponse> GenerateAuthorizationTokenAsync(string userName, string userPassword)
+        private string SymmetricEncrypt(string data)
+        {
+            byte[] initializationVector = Encoding.ASCII.GetBytes(_config["RandomInitializer"]);
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryptionKey"]);
+                aes.IV = initializationVector;
+                var symmetricEncryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+                using (var memoryStream = new MemoryStream())
+                {
+                    using (var cryptoStream = new CryptoStream(memoryStream as Stream,
+                        symmetricEncryptor, CryptoStreamMode.Write))
+                    {
+                        using (var streamWriter = new StreamWriter(cryptoStream as Stream))
+                        {
+                            streamWriter.Write(data);
+                        }
+                        return Convert.ToBase64String(memoryStream.ToArray());
+                    }
+                }
+            }
+        }
+        private string SymmetricDecrypt(string cipherText)
+        {
+            byte[] initializationVector = Encoding.ASCII.GetBytes("abcede0123456789");
+            byte[] buffer = Convert.FromBase64String(cipherText);
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryptionKey"]);
+                aes.IV = initializationVector;
+                var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+                using (var memoryStream = new MemoryStream(buffer))
+                {
+                    using (var cryptoStream = new CryptoStream(memoryStream as Stream,
+                        decryptor, CryptoStreamMode.Read))
+                    {
+                        using (var streamReader = new StreamReader(cryptoStream as Stream))
+                        {
+                            return streamReader.ReadToEnd();
+                        }
+                    }
+                }
+            }
+        }
+        private async Task<UserItem> BasicUserAuthentication(string userName, string userPassword)
         {
             var user = await _serviceContext.Users.Where(u => u.Name == userName).FirstOrDefaultAsync();
 
@@ -41,17 +95,33 @@ namespace Logic.Logic
                 throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
             }
 
-            var secureRandomString = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            var securedToken = HashString(secureRandomString);
-            user.HashedToken = securedToken;
-            user.TokenExpireDate = DateTime.Now.AddMinutes(10);
+            return user;
+        }
+        public async Task<LoginResponse> GenerateAuthenticationBearerTokenAsync(string userName, string userPassword)
+        {
+            var user = await BasicUserAuthentication(userName, userPassword);
+
+            var accessToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            var refreshToken = GenerateJWTAuthenticationToken(new JWTClaims(user));
+
+            user.HashedAccessToken = SymmetricEncrypt(userName) + ":" + HashString(accessToken);
+            user.HashedRefreshToken = HashString(refreshToken);
 
             await _serviceContext.SaveChangesAsync();
 
-            return new LoginResponse(user, secureRandomString);
+            return new LoginResponse(user, SymmetricEncrypt(userName) + ":" + accessToken, refreshToken);
         }
-        public async Task<ValidateTokenResponse> ValidateUserTokenAsync(string userName, string token, List<string> authorizedRols)
+        public async Task<LoginResponse> AuthenticateAccessBearerTokenAsync(string token)
         {
+            var userName = "";
+            try
+            {
+                userName = SymmetricDecrypt(token.Split(':')[0]);
+            }catch(ArgumentException)
+            {
+                throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
+            }
+            
             var user = await _serviceContext.Users.Where(u => u.Name == userName).FirstOrDefaultAsync();
 
             if (user == null)
@@ -64,35 +134,90 @@ namespace Logic.Logic
                 throw new AuthenticationException(AuthenticationExceptionType.BlockedAccount);
             }
 
-            var userRol = await _serviceContext.UserRols.Where(r => r.Id == user.RolId).FirstOrDefaultAsync();
-
-            if (userRol == null || !userRol.IsActive)
-            {
-                throw new BadRequestException(BadRequestExceptionType.InvalidOperation);
-            }
-
-            bool authorizedRol = authorizedRols.Any(r => r.Equals(userRol.Name));
-
-            if (!authorizedRol)
-            {
-                throw new AuthenticationException(AuthenticationExceptionType.RolNotAuthorized);
-            }
-
-            if (!VerifyHashedKey(token, user.HashedToken))
+            if (!VerifyHashedKey(token, user.HashedAccessToken.Split(':')[1]))
             {
                 throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
             }
-
-            if (DateTime.Now > user.TokenExpireDate)
-            {
-                throw new AuthenticationException(AuthenticationExceptionType.ExpiredToken);
-            }
-
-            user.TokenExpireDate = DateTime.Now.AddMinutes(10);
-
             await _serviceContext.SaveChangesAsync();
 
-            return new ValidateTokenResponse(user, true);
+            var jwtClaims = new JWTClaims(user);
+
+            return new LoginResponse(user, token, GenerateJWTAuthenticationToken(jwtClaims));
         }
+        private string GenerateJWTAuthenticationToken(JWTClaims jwtClaims)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Name, jwtClaims.UserName),
+                new Claim(ClaimTypes.NameIdentifier, jwtClaims.UserIdWeb),
+                new Claim(ClaimTypes.Role, jwtClaims.UserRol)
+            };
+            var token = new JwtSecurityToken(_config["Jwt:Issuer"],
+                _config["Jwt:Audience"],
+                claims,
+                expires: DateTime.Now.AddMinutes(Convert.ToInt32(_config["Jwt:ExpiracyAfter"])),
+                signingCredentials: credentials);
+
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+        public AuthenticationTokenResponse AuthenticateJWTToken(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var validationParameters = GetJWTValidationParameters();
+            SecurityToken validatedToken;
+            IPrincipal principal = tokenHandler.ValidateToken(token, validationParameters, out validatedToken);
+            //y cómo invalida?)
+            return RefreshJWTAuthenticationToken(token);
+        }
+        private AuthenticationTokenResponse RefreshJWTAuthenticationToken(string oldToken)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var decodedValue = handler.ReadJwtToken(oldToken);
+            var userName = decodedValue.Claims.First(c => c.Type == "Name").Value;
+            var userIdWebString = decodedValue.Claims.First(c => c.Type == "NameIdentifier").Value;
+            var userRolName = decodedValue.Claims.First(c => c.Type == "Role").Value;
+            var userData = new AuthenticationUserData(userName, userIdWebString, userRolName);
+            if (decodedValue.ValidTo < DateTime.Now.AddMinutes(Convert.ToInt32(_config["Jwt:RefreshOn"]))){
+                var refreshedToken = GenerateJWTAuthenticationToken(new JWTClaims(userName, userIdWebString, userRolName));
+                return new AuthenticationTokenResponse(true, refreshedToken, userData);
+            }
+            else
+            {
+                return new AuthenticationTokenResponse(true, oldToken, userData);
+            }
+        }
+        private TokenValidationParameters GetJWTValidationParameters()
+        {
+            return new TokenValidationParameters()
+            {
+                ValidateLifetime = true,
+                ValidateAudience = true,
+                ValidateIssuer = true,
+                ValidIssuer = _config["Jwt:Issuer"],
+                ValidAudience = _config["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]))
+            };
+        }
+    }
+    public class JWTClaims
+    {
+        public JWTClaims(UserItem user)
+        {
+            UserName = user.Name;
+            UserIdWeb = user.IdWeb.ToString();
+            UserRol = ((UserRolEnum)user.IdRol).ToString();
+        }
+        public JWTClaims(string userName, string userIdWeb, string userRol)
+        {
+            UserName = userName;
+            UserIdWeb = userIdWeb;
+            UserRol = userRol;
+        }
+        public string UserName { get; set; }
+        public string UserIdWeb { get; set; }
+        public string UserRol { get; set; }
     }
 }

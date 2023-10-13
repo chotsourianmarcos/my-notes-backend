@@ -1,4 +1,6 @@
-﻿namespace Entities.Items
+﻿using System.Security.Claims;
+
+namespace Entities.Items
 {
     public class UserRolItem
     {

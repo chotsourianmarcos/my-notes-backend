@@ -10,7 +10,7 @@ namespace Data.ModelConfigurations
         public void Configure(EntityTypeBuilder<UserItem> e)
         {
             e.ToTable("t_users");
-            e.HasOne<UserRolItem>().WithMany().HasForeignKey(u => u.RolId);
+            e.HasOne<UserRolItem>().WithMany().HasForeignKey(u => u.IdRol);
         }
     }
 }

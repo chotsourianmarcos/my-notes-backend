@@ -1,36 +1,48 @@
 ﻿using Entities.Entities;
+using Entities.Enums;
 
 namespace Entities.Models.Responses
 {
     public class LoginResponse
     {
         public LoginResponse() { }
-        public LoginResponse(UserItem user, string accesToken) {
+        public LoginResponse(UserItem user, string accessToken, string refreshToken) {
             UserIdWeb = user.IdWeb;
             UserName = user.Name;
-            AccessToken = accesToken;
-            IdRol = user.RolId;
+            UserRol = ((UserRolEnum)user.IdRol).ToString();
+            AccessToken = accessToken;
+            RefreshToken = refreshToken;
         }
         public Guid UserIdWeb { get; set; }
         public string UserName { get; set; }
+        public string UserRol { get; set; }
         public string AccessToken { get; set; }
-        public int IdRol { get; set; }
+        public string RefreshToken { get; set; }
     }
-    public class ValidateTokenResponse
+    public class AuthenticationTokenResponse
     {
-        public ValidateTokenResponse() { }
-        public ValidateTokenResponse(UserItem user, bool validated)
+        public AuthenticationTokenResponse() { }
+        public AuthenticationTokenResponse(bool validated, string refreshedToken, AuthenticationUserData userData)
         {
-            UserId = user.Id;
-            UserIdWeb = user.IdWeb;
-            UserName = user.Name;
-            UserIdRol = user.RolId;
+            RefreshedToken = refreshedToken;
+            UserData = userData;
             Validated = validated;
         }
-        public int UserId { get; set; }
-        public Guid UserIdWeb { get; set; }
-        public string UserName { get; set; }
-        public int UserIdRol { get; set; }
+        public string RefreshedToken { get; set; }
+        public AuthenticationUserData UserData { get;set;}
         public bool Validated { get; set; }
+        
+    }
+    public class AuthenticationUserData
+    {
+        public AuthenticationUserData(string userName, string userIdWebString, string userRolName) 
+        {
+            UserName = userName;
+            UserIdWeb = Guid.Parse(userIdWebString);
+            UserIdRol = (int)Enum.Parse(typeof(UserRolEnum), userRolName);
+        }
+        public string UserName { get; set; }
+        public Guid UserIdWeb { get; set; }
+        public int UserIdRol { get; set; }
     }
 }

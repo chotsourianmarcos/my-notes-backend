@@ -15,8 +15,8 @@ namespace Entities.Items
         public virtual UserItem User { get; set; }
         public virtual ICollection<TagItem> Tags { get; set; }
         public string Content { get; set; }
-        public bool IsArchived { get; set; }
         public DateTime InsertedDate { get; set; }
+        public bool IsArchived { get; set; }
         public bool IsActive { get; set; }
         public bool ValidateValues(bool isNew, bool isActive)
         {

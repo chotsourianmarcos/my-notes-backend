@@ -20,7 +20,6 @@ namespace Entities.Models.Requests
             newUserItem.IdWeb = Guid.NewGuid();
             newUserItem.Name = userName;
             newUserItem.Email = userEmail;
-            newUserItem.TokenExpireDate = DateTime.Now;
             newUserItem.InsertDate = DateTime.Now;
             newUserItem.IsActive = true;
 

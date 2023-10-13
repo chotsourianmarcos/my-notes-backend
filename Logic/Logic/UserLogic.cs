@@ -28,13 +28,14 @@ namespace Logic.Logic
                 throw new BadRequestException(BadRequestExceptionType.RepeatedOperation);
             }
 
-            if (userItem.RolId == (int)UserRolEnums.Administrador)
+            if (userItem.IdRol == (int)UserRolEnum.Administrador)
             {
                 throw new AuthenticationException(AuthenticationExceptionType.RolNotAuthorized);
             }
 
-            userItem.HashedToken = "NOT GENERATED";
-
+            userItem.HashedAccessToken = "NOT GENERATED";
+            userItem.HashedRefreshToken = "NOT GENERATED";
+            
             await _serviceContext.Users.AddAsync(userItem);
 
             await _serviceContext.SaveChangesAsync();

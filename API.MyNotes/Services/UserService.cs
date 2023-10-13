@@ -14,11 +14,10 @@ namespace API.MyNotes.Services
             _userLogic = userLogic;
             _userSecurityLogic = userSecurityLogic;
         }
-
         public async Task UserRegister(UserRegisterRequest registerRequest)
         {
             var newUserItem = registerRequest.ToUserItem();
-            newUserItem.RolId = (int)UserRolEnums.Usuario;
+            newUserItem.IdRol = (int)UserRolEnum.Usuario;
             newUserItem.HashedPassword = _userSecurityLogic.HashString(registerRequest.userPassword);
 
             await _userLogic.InsertUserAsync(newUserItem);

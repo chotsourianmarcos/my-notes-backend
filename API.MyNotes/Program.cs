@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using API.MyNotes.Dependencies;
 using API.Middlewares;
-using Newtonsoft.Json;
 
 var AllowWebUIOrigin = "_allowWebUIOrigin";
 
@@ -21,11 +20,6 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
-//ver esto luego. y ver si dejo el paquete o no.
-//builder.Services.AddControllers().AddNewtonsoftJson(o =>
-//{
-//    o.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-//});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opt =>
@@ -58,7 +52,7 @@ builder.Services.AddSwaggerGen(opt =>
 
 builder.Services.AddDbContext<ServiceContext>(
         options => options.UseNpgsql("name=ConnectionStrings:ServiceContext"),
-        ServiceLifetime.Transient);
+        ServiceLifetime.Scoped);
 builder.Services.AddLogicServices();
 builder.Services.AddAPIServices();
 

@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Entities.Entities;
 using Entities.Items;
 using System.Reflection;
