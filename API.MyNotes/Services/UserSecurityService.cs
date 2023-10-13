@@ -18,26 +18,20 @@ namespace API.MyNotes.Services
         }
         public AuthenticationTokenResponse AuthenticateJWTToken(string authorization, List<string> allowedUserRols)
         {
-            //ValidateBearerAuthorization(authorization);
-            //var userName = GetUserNameFromBearerAuthorization(authorization);
-            //var token = GetTokenFromBearerAuthorization(authorization, userName);
-            return _userSecurityLogic.AuthenticateJWTToken(authorization);
+            ValidateJWTAuthorization(authorization);
+            var token = GetJWTFromAuthorization(authorization);
+            return _userSecurityLogic.AuthenticateJWTToken(token);
         }
-        //private void ValidateBearerAuthorization(string authorization)
-        //{
-        //    if (authorization.Length < 50 || !authorization.Contains(':'))
-        //    {
-        //        throw new BadRequestException(BadRequestExceptionType.InvalidOperation);
-        //    }
-        //}
-        //private string GetUserNameFromBearerAuthorization(string authorization)
-        //{
-        //    var indexToSplit = authorization.IndexOf(':');
-        //    return authorization.Substring(7, indexToSplit - 7);
-        //}
-        //private string GetTokenFromBearerAuthorization(string authorization, string userName)
-        //{
-        //    return authorization.Split(':')[1];
-        //}
+        private void ValidateJWTAuthorization(string authorization)
+        {
+            if (authorization.Length < 50 || !authorization.Contains('.'))
+            {
+                throw new BadRequestException(BadRequestExceptionType.InvalidOperation);
+            }
+        }
+        private string GetJWTFromAuthorization(string authorization)
+        {
+            return authorization.Split(' ')[1];
+        }
     }
 }

@@ -34,10 +34,10 @@ namespace Logic.Logic
         }
         private string SymmetricEncrypt(string data)
         {
-            byte[] initializationVector = Encoding.ASCII.GetBytes(_config["RandomInitializer"]);
+            byte[] initializationVector = Encoding.ASCII.GetBytes(_config["SymmetricEncryption:RandomInitializer"]);
             using (Aes aes = Aes.Create())
             {
-                aes.Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryptionKey"]);
+                aes.Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryption:Key"]);
                 aes.IV = initializationVector;
                 var symmetricEncryptor = aes.CreateEncryptor(aes.Key, aes.IV);
                 using (var memoryStream = new MemoryStream())
@@ -56,11 +56,11 @@ namespace Logic.Logic
         }
         private string SymmetricDecrypt(string cipherText)
         {
-            byte[] initializationVector = Encoding.ASCII.GetBytes("abcede0123456789");
+            byte[] initializationVector = Encoding.ASCII.GetBytes("SymmetricEncryption:RandomInitializer");
             byte[] buffer = Convert.FromBase64String(cipherText);
             using (Aes aes = Aes.Create())
             {
-                aes.Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryptionKey"]);
+                aes.Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryption:Key"]);
                 aes.IV = initializationVector;
                 var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
                 using (var memoryStream = new MemoryStream(buffer))
@@ -99,17 +99,25 @@ namespace Logic.Logic
         }
         public async Task<LoginResponse> GenerateAuthenticationBearerTokenAsync(string userName, string userPassword)
         {
-            var user = await BasicUserAuthentication(userName, userPassword);
+            try
+            {
+                var user = await BasicUserAuthentication(userName, userPassword);
 
-            var accessToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            var refreshToken = GenerateJWTAuthenticationToken(new JWTClaims(user));
+                var accessToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+                var refreshToken = GenerateJWTAuthenticationToken(new JWTClaims(user));
 
-            user.HashedAccessToken = SymmetricEncrypt(userName) + ":" + HashString(accessToken);
-            user.HashedRefreshToken = HashString(refreshToken);
+                user.HashedAccessToken = SymmetricEncrypt(userName) + ":" + HashString(accessToken);
+                user.HashedRefreshToken = HashString(refreshToken);
 
-            await _serviceContext.SaveChangesAsync();
+                await _serviceContext.SaveChangesAsync();
 
-            return new LoginResponse(user, SymmetricEncrypt(userName) + ":" + accessToken, refreshToken);
+                return new LoginResponse(user, SymmetricEncrypt(userName) + ":" + accessToken, refreshToken);
+            }catch(Exception ex)
+            {
+                var asd = 0;
+                throw ex;
+            }
+            
         }
         public async Task<LoginResponse> AuthenticateAccessBearerTokenAsync(string token)
         {
@@ -150,9 +158,9 @@ namespace Logic.Logic
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, jwtClaims.UserName),
-                new Claim(ClaimTypes.NameIdentifier, jwtClaims.UserIdWeb),
-                new Claim(ClaimTypes.Role, jwtClaims.UserRol)
+                new Claim("userName", jwtClaims.UserName),
+                new Claim("userIdWeb", jwtClaims.UserIdWeb),
+                new Claim("userRol", jwtClaims.UserRol)
             };
             var token = new JwtSecurityToken(_config["Jwt:Issuer"],
                 _config["Jwt:Audience"],
@@ -176,9 +184,10 @@ namespace Logic.Logic
         {
             var handler = new JwtSecurityTokenHandler();
             var decodedValue = handler.ReadJwtToken(oldToken);
-            var userName = decodedValue.Claims.First(c => c.Type == "Name").Value;
-            var userIdWebString = decodedValue.Claims.First(c => c.Type == "NameIdentifier").Value;
-            var userRolName = decodedValue.Claims.First(c => c.Type == "Role").Value;
+            var claims = decodedValue.Claims;
+            var userName = decodedValue.Claims.First(c => c.Type == "userName").Value;
+            var userIdWebString = decodedValue.Claims.First(c => c.Type == "userIdWeb").Value;
+            var userRolName = decodedValue.Claims.First(c => c.Type == "userRol").Value;
             var userData = new AuthenticationUserData(userName, userIdWebString, userRolName);
             if (decodedValue.ValidTo < DateTime.Now.AddMinutes(Convert.ToInt32(_config["Jwt:RefreshOn"]))){
                 var refreshedToken = GenerateJWTAuthenticationToken(new JWTClaims(userName, userIdWebString, userRolName));
