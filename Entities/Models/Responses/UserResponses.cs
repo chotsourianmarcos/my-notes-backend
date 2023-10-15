@@ -13,8 +13,8 @@ namespace Entities.Models.Responses
             AccessToken = accessToken;
             RefreshToken = refreshToken;
         }
-        public Guid UserIdWeb { get; set; }
         public string UserName { get; set; }
+        public Guid UserIdWeb { get; set; }
         public string UserRol { get; set; }
         public string AccessToken { get; set; }
         public string RefreshToken { get; set; }
