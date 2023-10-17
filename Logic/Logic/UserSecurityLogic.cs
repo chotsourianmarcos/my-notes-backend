@@ -104,7 +104,7 @@ namespace Logic.Logic
                 var user = await BasicUserAuthentication(userName, userPassword);
 
                 var accessToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-                var refreshToken = GenerateJWTAuthenticationToken(new JWTClaims(user));
+                var refreshToken = GenerateJWTAuthenticationToken(new JWTData(user));
 
                 user.HashedAccessToken = SymmetricEncrypt(userName) + ":" + HashString(accessToken);
                 user.HashedRefreshToken = HashString(refreshToken);
@@ -148,19 +148,19 @@ namespace Logic.Logic
             }
             await _serviceContext.SaveChangesAsync();
 
-            var jwtClaims = new JWTClaims(user);
+            var jwtClaims = new JWTData(user);
 
             return new LoginResponse(user, token, GenerateJWTAuthenticationToken(jwtClaims));
         }
-        private string GenerateJWTAuthenticationToken(JWTClaims jwtClaims)
+        private string GenerateJWTAuthenticationToken(JWTData jwtata)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var claims = new[]
             {
-                new Claim("userName", jwtClaims.UserName),
-                new Claim("userIdWeb", jwtClaims.UserIdWeb),
-                new Claim("userRol", jwtClaims.UserRol)
+                new Claim("userName", jwtata.UserName),
+                new Claim("userIdWeb", jwtata.UserIdWeb),
+                new Claim("userRol", jwtata.UserRolName)
             };
             var token = new JwtSecurityToken(_config["Jwt:Issuer"],
                 _config["Jwt:Audience"],
@@ -176,21 +176,23 @@ namespace Logic.Logic
             var tokenHandler = new JwtSecurityTokenHandler();
             var validationParameters = GetJWTValidationParameters();
             SecurityToken validatedToken;
-            IPrincipal principal = tokenHandler.ValidateToken(token, validationParameters, out validatedToken);
-            //y cómo invalida?)
+            var date = DateTime.Now;
+            try
+            {
+                IPrincipal principal = tokenHandler.ValidateToken(token, validationParameters, out validatedToken);
+            }
+            catch(SecurityTokenExpiredException)
+            {
+                throw new AuthenticationException(AuthenticationExceptionType.ExpiredToken);
+            }
             return RefreshJWTAuthenticationToken(token);
         }
         private AuthenticationTokenResponse RefreshJWTAuthenticationToken(string oldToken)
         {
-            var handler = new JwtSecurityTokenHandler();
-            var decodedValue = handler.ReadJwtToken(oldToken);
-            var claims = decodedValue.Claims;
-            var userName = decodedValue.Claims.First(c => c.Type == "userName").Value;
-            var userIdWebString = decodedValue.Claims.First(c => c.Type == "userIdWeb").Value;
-            var userRolName = decodedValue.Claims.First(c => c.Type == "userRol").Value;
-            var userData = new AuthenticationUserData(userName, userIdWebString, userRolName);
-            if (decodedValue.ValidTo < DateTime.Now.AddMinutes(Convert.ToInt32(_config["Jwt:RefreshOn"]))){
-                var refreshedToken = GenerateJWTAuthenticationToken(new JWTClaims(userName, userIdWebString, userRolName));
+            var tokenData = new JWTData(oldToken);
+            var userData = new AuthenticationUserData(tokenData.UserName, tokenData.UserIdWeb, tokenData.UserRolName);
+            if (tokenData.ValidTo < DateTime.Now.AddMinutes(Convert.ToInt32(_config["Jwt:RefreshOn"]))){
+                var refreshedToken = GenerateJWTAuthenticationToken(tokenData);
                 return new AuthenticationTokenResponse(true, refreshedToken, userData);
             }
             else
@@ -210,23 +212,49 @@ namespace Logic.Logic
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]))
             };
         }
+        public async Task<int> GetUserIdFromIdWeb(Guid idWeb)
+        {
+            var user = await _serviceContext.Users.Where(u => u.IdWeb == idWeb).FirstOrDefaultAsync();
+            if (user != null)
+            {
+                return user.Id;
+            }
+            else
+            {
+                return 0;
+            }
+            
+        }
     }
-    public class JWTClaims
+    public class JWTData
     {
-        public JWTClaims(UserItem user)
+        public JWTData(UserItem user)
         {
             UserName = user.Name;
             UserIdWeb = user.IdWeb.ToString();
-            UserRol = ((UserRolEnum)user.IdRol).ToString();
+            UserRolName = ((UserRolEnum)user.IdRol).ToString();
         }
-        public JWTClaims(string userName, string userIdWeb, string userRol)
+        public JWTData(string userName, string userIdWeb, string userRolName)
         {
             UserName = userName;
             UserIdWeb = userIdWeb;
-            UserRol = userRol;
+            UserRolName = userRolName;
+        }
+        public JWTData(string jwtoken)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var decodedValue = handler.ReadJwtToken(jwtoken);
+
+            var claims = decodedValue.Claims;
+            this.UserName = decodedValue.Claims.First(c => c.Type == "userName").Value;
+            this.UserIdWeb = decodedValue.Claims.First(c => c.Type == "userIdWeb").Value;
+            this.UserRolName = decodedValue.Claims.First(c => c.Type == "userRol").Value;
+
+            this.ValidTo = decodedValue.ValidTo;
         }
         public string UserName { get; set; }
         public string UserIdWeb { get; set; }
-        public string UserRol { get; set; }
+        public string UserRolName { get; set; }
+        public DateTime ValidTo { get; set; }
     }
 }

@@ -21,71 +21,36 @@ namespace API.Controllers
         [HttpGet(Name = "GetAll")]
         public async Task<ActionResult<List<NoteItem>>> GetAllNotes([FromQuery] Guid UserIdWeb)
         {
-            try
-            {
-                var result = await _noteService.GetAllNotes();
-                return Ok(result);
-            }
-            catch (ControlledException ex)
-            {
-                return ex.ToObjectResult();
-            }
+            var result = await _noteService.GetAllNotes();
+            return Ok(result);
         }
         [EndpointAuthorize(AllowedUserRols = "Usuario")]
         [HttpGet(Name = "GetByCriteria")]
         public async Task<ActionResult<List<NoteItem>>> GetNotesByCriteria([FromQuery] GetNotesByCriteriaRequest requestData)
         {
-            try
-            {
-                var result = await _noteService.GetNotesByCriteria(requestData.ToNoteFilter());
-                return Ok(result);
-            }
-            catch (ControlledException ex)
-            {
-                return ex.ToObjectResult();
-            }
+            var result = await _noteService.GetNotesByCriteria(requestData.ToNoteFilter());
+            return Ok(result);
         }
         [EndpointAuthorize(AllowedUserRols = "Usuario")]
         [HttpPost(Name = "AddNote")]
         public async Task<ActionResult<Guid>> AddNote([FromBody] AddUpdateNoteRequest newNoteRequest)
         {
-            try
-            {
-                var idWeb = await _noteService.AddNote(newNoteRequest);
-                return Ok(idWeb);
-            }
-            catch (ControlledException ex)
-            {
-                return ex.ToObjectResult();
-            }
+            var idWeb = await _noteService.AddNote(newNoteRequest);
+            return Ok(idWeb);
         }
         [EndpointAuthorize(AllowedUserRols = "Usuario")]
         [HttpPatch(Name = "UpdateNote")]
         public async Task<ActionResult> UpdateNote([FromBody] AddUpdateNoteRequest updateNoteRequest)
         {
-            try
-            {
-                await _noteService.UpdateNote(updateNoteRequest);
-                return Ok();
-            }
-            catch (ControlledException ex)
-            {
-                return ex.ToObjectResult();
-            }
+            await _noteService.UpdateNote(updateNoteRequest);
+            return Ok();
         }
         [EndpointAuthorize(AllowedUserRols = "Usuario")]
         [HttpDelete(Name = "DeleteNote")]
         public async Task<ActionResult> DeleteNote([FromQuery] Guid idWeb)
         {
-            try
-            {
-                await _noteService.DeleteNote(idWeb);
-                return Ok();
-            }
-            catch (ControlledException ex)
-            {
-                return ex.ToObjectResult();
-            }
+            await _noteService.DeleteNote(idWeb);
+            return Ok();
         }
     }
 }

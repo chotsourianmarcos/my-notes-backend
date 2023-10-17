@@ -71,6 +71,8 @@ if (app.Environment.IsProduction())
     app.Urls.Add($"http://*:{port}");
 }
 
+app.UseExceptionHandlerMiddleware();
+
 app.UseHttpsRedirection();
 
 app.UseCors(AllowWebUIOrigin);

@@ -33,5 +33,9 @@ namespace API.MyNotes.Services
         {
             return authorization.Split(' ')[1];
         }
+        public async Task<int> GetUserIdFromIdWeb(Guid idWeb)
+        {
+            return await _userSecurityLogic.GetUserIdFromIdWeb(idWeb);
+        }
     }
 }

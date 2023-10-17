@@ -22,29 +22,15 @@ namespace API.Controllers
         [HttpPost(Name = "Register")]
         public async Task<ActionResult> Register([FromBody] UserRegisterRequest registerRequest)
         {
-            try
-            {
-                await _userService.UserRegister(registerRequest);
-                return Ok();
-            }
-            catch (ControlledException ex)
-            {
-                return ex.ToObjectResult();
-            }
+            await _userService.UserRegister(registerRequest);
+            return Ok();
         }
         [EndpointAuthorize(AllowsAnonymous = true)]
         [HttpPost(Name = "Login")]
         public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest loginRequest)
         {
-            try
-            {
-                LoginResponse response = await _userSecurityService.GenerateAccessBearerToken(loginRequest.UserName, loginRequest.UserPassword);
-                return Ok(response);
-            }
-            catch (ControlledException ex)
-            {
-                return ex.ToObjectResult();
-            }
+            LoginResponse response = await _userSecurityService.GenerateAccessBearerToken(loginRequest.UserName, loginRequest.UserPassword);
+            return Ok(response);
         }
     }
 }

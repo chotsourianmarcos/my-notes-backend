@@ -19,15 +19,8 @@ namespace API.Controllers
         [HttpGet(Name = "GetAllTags")]
         public async Task<ActionResult<List<string>>> GetAllTags()
         {
-            try
-            {
-                var result = await _tagService.GetAllTags();
-                return Ok(result);
-            }
-            catch (ControlledException ex)
-            {
-                return ex.ToObjectResult();
-            }
+            var result = await _tagService.GetAllTags();
+            return Ok(result);
         }
     }
 }

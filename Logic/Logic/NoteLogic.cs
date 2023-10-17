@@ -11,7 +11,9 @@ namespace Logic.Logic
     {
         private readonly ServiceContext _serviceContext;
         private readonly ITagLogic _tagLogic;
-        public NoteLogic(ServiceContext serviceContext, ITagLogic tagLogic)
+        public NoteLogic(ServiceContext serviceContext,
+            ITagLogic tagLogic,
+            IUserSecurityLogic userSecurityLogic)
         {
             _serviceContext = serviceContext;
             _tagLogic = tagLogic;

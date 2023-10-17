@@ -8,5 +8,6 @@ namespace Logic.ILogic
         Task<LoginResponse> AuthenticateAccessBearerTokenAsync(string token);
         AuthenticationTokenResponse AuthenticateJWTToken(string token);
         string HashString(string key);
+        Task<int> GetUserIdFromIdWeb(Guid idWeb);
     }
 }

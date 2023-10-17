@@ -9,12 +9,12 @@ namespace Logic.Exceptions
         {
             HttpResponseMessage = resp;
         }
-        public ObjectResult ToObjectResult()
+        public async Task<ObjectResult> ToObjectResult()
         {
             var data = new
             {
                 ReasonPhrase = HttpResponseMessage.ReasonPhrase,
-                Message = HttpResponseMessage.Content.ReadAsStringAsync()
+                Message = await HttpResponseMessage.Content.ReadAsStringAsync()
             };
 
             ObjectResult objectResult = new ObjectResult(data);

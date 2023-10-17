@@ -14,6 +14,7 @@ namespace API.Middlewares
         }
         public async Task InvokeAsync(HttpContext httpContext, IUserSecurityService userSecurityService)
         {
+            SetCurrentUserId(0);
             SetCurrentUserName("");
             SetCurrentUserIdWeb(Guid.Empty);
             SetCurrentUserIdRol(0);
@@ -38,6 +39,7 @@ namespace API.Middlewares
                         throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
                     }
 
+                    SetCurrentUserId(await userSecurityService.GetUserIdFromIdWeb(validationResponse.UserData.UserIdWeb));
                     SetCurrentUserName(validationResponse.UserData.UserName);
                     SetCurrentUserIdWeb(validationResponse.UserData.UserIdWeb);
                     SetCurrentUserIdRol(validationResponse.UserData.UserIdRol);

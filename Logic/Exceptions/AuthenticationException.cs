@@ -49,7 +49,7 @@
             }
             if (!String.IsNullOrEmpty(errorCode))
             {
-                this.ReasonPhrase = errorCode;
+                this.ReasonPhrase = errorCode + ":" + this.ReasonPhrase;
             }
         }
     }
