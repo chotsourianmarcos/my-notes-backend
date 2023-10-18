@@ -32,5 +32,12 @@ namespace API.Controllers
             LoginResponse response = await _userSecurityService.GenerateAccessBearerToken(loginRequest.UserName, loginRequest.UserPassword);
             return Ok(response);
         }
+        [EndpointAuthorize(AllowsAnonymous = true)]
+        [HttpPost(Name = "GenerateRefreshJWT")]
+        public async Task<ActionResult<string>> GenerateRefreshJWT([FromBody] RefreshTokenRequest refreshRequest)
+        {
+            var response = await _userSecurityService.GenerateRefreshJWT(refreshRequest);
+            return Ok(response);
+        }
     }
 }

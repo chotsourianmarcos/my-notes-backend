@@ -2,6 +2,11 @@
 
 namespace Entities.Models.Requests
 {
+    public class RefreshTokenRequest
+    {
+        public string AccessToken { get; set; }
+        public Guid UserIdWeb { get; set; }
+    }
     public class LoginRequest
     {
         public string UserName { get; set; }

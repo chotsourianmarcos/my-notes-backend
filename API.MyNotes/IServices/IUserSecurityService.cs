@@ -1,4 +1,5 @@
-﻿using Entities.Models.Responses;
+﻿using Entities.Models.Requests;
+using Entities.Models.Responses;
 
 namespace API.IServices
 {
@@ -7,5 +8,6 @@ namespace API.IServices
         Task<LoginResponse> GenerateAccessBearerToken(string userName, string userPassword);
         AuthenticationTokenResponse AuthenticateJWTToken(string authorization, List<string> allowedUserRols);
         Task<int> GetUserIdFromIdWeb(Guid idWeb);
+        Task<string> GenerateRefreshJWT(RefreshTokenRequest accessToken);
     }
 }

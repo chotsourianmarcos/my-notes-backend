@@ -1,7 +1,9 @@
 ﻿using API.IServices;
+using Entities.Models.Requests;
 using Entities.Models.Responses;
 using Logic.Exceptions;
 using Logic.ILogic;
+using Logic.Logic;
 
 namespace API.MyNotes.Services
 {
@@ -36,6 +38,10 @@ namespace API.MyNotes.Services
         public async Task<int> GetUserIdFromIdWeb(Guid idWeb)
         {
             return await _userSecurityLogic.GetUserIdFromIdWeb(idWeb);
+        }
+        public async Task<string> GenerateRefreshJWT(RefreshTokenRequest request)
+        {
+            return await _userSecurityLogic.GenerateRefreshJWTFromAccessToken(request.UserIdWeb, request.AccessToken);
         }
     }
 }

@@ -99,27 +99,19 @@ namespace Logic.Logic
         }
         public async Task<LoginResponse> GenerateAuthenticationBearerTokenAsync(string userName, string userPassword)
         {
-            try
-            {
-                var user = await BasicUserAuthentication(userName, userPassword);
+            var user = await BasicUserAuthentication(userName, userPassword);
 
-                var accessToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-                var refreshToken = GenerateJWTAuthenticationToken(new JWTData(user));
+            var accessToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            var refreshToken = GenerateJWTAuthenticationToken(new JWTData(user));
 
-                user.HashedAccessToken = SymmetricEncrypt(userName) + ":" + HashString(accessToken);
-                user.HashedRefreshToken = HashString(refreshToken);
+            user.HashedAccessToken = SymmetricEncrypt(userName) + ":" + HashString(accessToken);
+            user.HashedRefreshToken = HashString(refreshToken);
 
-                await _serviceContext.SaveChangesAsync();
+            await _serviceContext.SaveChangesAsync();
 
-                return new LoginResponse(user, SymmetricEncrypt(userName) + ":" + accessToken, refreshToken);
-            }catch(Exception ex)
-            {
-                var asd = 0;
-                throw ex;
-            }
-            
+            return new LoginResponse(user, SymmetricEncrypt(userName) + ":" + accessToken, refreshToken);
         }
-        public async Task<LoginResponse> AuthenticateAccessBearerTokenAsync(string token)
+        public async Task<string> GenerateRefreshJWTFromAccessToken(Guid userIdWeb, string token)
         {
             var userName = "";
             try
@@ -130,7 +122,7 @@ namespace Logic.Logic
                 throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
             }
             
-            var user = await _serviceContext.Users.Where(u => u.Name == userName).FirstOrDefaultAsync();
+            var user = await _serviceContext.Users.Where(u => u.Name.Equals(userName)).FirstOrDefaultAsync();
 
             if (user == null)
             {
@@ -142,15 +134,19 @@ namespace Logic.Logic
                 throw new AuthenticationException(AuthenticationExceptionType.BlockedAccount);
             }
 
+            if (!user.IdWeb.Equals(userIdWeb))
+            {
+                throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
+            }
+
             if (!VerifyHashedKey(token, user.HashedAccessToken.Split(':')[1]))
             {
                 throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
             }
-            await _serviceContext.SaveChangesAsync();
 
             var jwtClaims = new JWTData(user);
 
-            return new LoginResponse(user, token, GenerateJWTAuthenticationToken(jwtClaims));
+            return GenerateJWTAuthenticationToken(jwtClaims);
         }
         private string GenerateJWTAuthenticationToken(JWTData jwtata)
         {
@@ -223,7 +219,6 @@ namespace Logic.Logic
             {
                 return 0;
             }
-            
         }
     }
     public class JWTData
