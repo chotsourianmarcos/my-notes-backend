@@ -37,7 +37,7 @@
                 case (int)AuthenticationExceptionType.RolNotAuthorized:
                     this.StatusCode = System.Net.HttpStatusCode.Unauthorized;
                     this.Content = new StringContent("User does not have permission for the requested operation.");
-                    this.ReasonPhrase = "User rol unauthorized for this operation.";
+                    this.ReasonPhrase = "User rol unauthorized.";
                     break;
                 case '_':
                     break;

@@ -32,49 +32,120 @@ namespace Logic.Logic
         {
             return BCrypt.Net.BCrypt.Verify(key, hash);
         }
-        private string SymmetricEncrypt(string data)
+        private string SymmetricEncrypt(string stringToEncrypt)
         {
-            byte[] initializationVector = Encoding.ASCII.GetBytes(_config["SymmetricEncryption:RandomInitializer"]);
-            using (Aes aes = Aes.Create())
+            try
             {
-                aes.Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryption:Key"]);
-                aes.IV = initializationVector;
-                var symmetricEncryptor = aes.CreateEncryptor(aes.Key, aes.IV);
-                using (var memoryStream = new MemoryStream())
+                //byte[] initializationVector = Encoding.ASCII.GetBytes(_config["SymmetricEncryption:RandomInitializer"]);
+                //using (Aes aes = Aes.Create())
+                //{
+                //    aes.Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryption:Key"]);
+                //    aes.IV = initializationVector;
+                //    var symmetricEncryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+                //    using (var memoryStream = new MemoryStream())
+                //    {
+                //        using (var cryptoStream = new CryptoStream(memoryStream as Stream,
+                //            symmetricEncryptor, CryptoStreamMode.Write))
+                //        {
+                //            using (var streamWriter = new StreamWriter(cryptoStream as Stream))
+                //            {
+                //                streamWriter.Write(data);
+                //            }
+                //            return Convert.ToBase64String(memoryStream.ToArray());
+                //        }
+                //    }
+                //}
+                using (var aes = new AesCryptoServiceProvider()
                 {
-                    using (var cryptoStream = new CryptoStream(memoryStream as Stream,
-                        symmetricEncryptor, CryptoStreamMode.Write))
+                    Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryption:Key"]),
+                    Mode = CipherMode.CBC,
+                    Padding = PaddingMode.PKCS7
+                })
+                {
+
+                    var input = Encoding.UTF8.GetBytes(stringToEncrypt);
+                    aes.GenerateIV();
+                    var iv = aes.IV;
+                    using (var encrypter = aes.CreateEncryptor(aes.Key, iv))
+                    using (var cipherStream = new MemoryStream())
                     {
-                        using (var streamWriter = new StreamWriter(cryptoStream as Stream))
+                        using (var tCryptoStream = new CryptoStream(cipherStream, encrypter, CryptoStreamMode.Write))
+                        using (var tBinaryWriter = new BinaryWriter(tCryptoStream))
                         {
-                            streamWriter.Write(data);
+                            //Prepend IV to data
+                            //tBinaryWriter.Write(iv); This is the original broken code, it encrypts the iv
+                            cipherStream.Write(iv);  //Write iv to the plain stream (not tested though)
+                            tBinaryWriter.Write(input);
+                            tCryptoStream.FlushFinalBlock();
                         }
-                        return Convert.ToBase64String(memoryStream.ToArray());
+
+                        return Convert.ToBase64String(cipherStream.ToArray());
                     }
+
                 }
             }
+            catch(Exception ex) 
+            {
+                throw ex;
+            }
+            
         }
-        private string SymmetricDecrypt(string cipherText)
+        private string SymmetricDecrypt(string cipherString)
         {
-            byte[] initializationVector = Encoding.ASCII.GetBytes("SymmetricEncryption:RandomInitializer");
-            byte[] buffer = Convert.FromBase64String(cipherText);
-            using (Aes aes = Aes.Create())
+            try
             {
-                aes.Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryption:Key"]);
-                aes.IV = initializationVector;
-                var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-                using (var memoryStream = new MemoryStream(buffer))
+                byte[] input = Convert.FromBase64String(cipherString);
+                //byte[] initializationVector = Encoding.ASCII.GetBytes("SymmetricEncryption:RandomInitializer");
+                //byte[] buffer = Convert.FromBase64String(cipherText);
+                //using (Aes aes = Aes.Create())
+                //{
+                //    aes.Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryption:Key"]);
+                //    aes.IV = initializationVector;
+                //    var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+                //    using (var memoryStream = new MemoryStream(buffer))
+                //    {
+                //        using (var cryptoStream = new CryptoStream(memoryStream as Stream,
+                //            decryptor, CryptoStreamMode.Read))
+                //        {
+                //            using (var streamReader = new StreamReader(cryptoStream as Stream))
+                //            {
+                //                return streamReader.ReadToEnd();
+                //            }
+                //        }
+                //    }
+                //}
+                var aes = new AesCryptoServiceProvider()
                 {
-                    using (var cryptoStream = new CryptoStream(memoryStream as Stream,
-                        decryptor, CryptoStreamMode.Read))
+                    Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryption:Key"]),
+                    Mode = CipherMode.CBC,
+                    Padding = PaddingMode.PKCS7
+                };
+
+                //get first 16 bytes of IV and use it to decrypt
+                var iv = new byte[16];
+                Array.Copy(input, 0, iv, 0, iv.Length);
+
+                using (var ms = new MemoryStream())
+                {
+                    using (var cs = new CryptoStream(ms, aes.CreateDecryptor(aes.Key, iv), CryptoStreamMode.Write))
+                    using (var binaryWriter = new BinaryWriter(cs))
                     {
-                        using (var streamReader = new StreamReader(cryptoStream as Stream))
-                        {
-                            return streamReader.ReadToEnd();
-                        }
+                        //Decrypt Cipher Text from Message
+                        binaryWriter.Write(
+                            input,
+                            iv.Length,
+                            input.Length - iv.Length
+                        );
                     }
+
+                    return Encoding.Default.GetString(ms.ToArray());
                 }
             }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
+            
         }
         private async Task<UserItem> BasicUserAuthentication(string userName, string userPassword)
         {
@@ -104,7 +175,8 @@ namespace Logic.Logic
             var accessToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
             var refreshToken = GenerateJWTAuthenticationToken(new JWTData(user));
 
-            user.HashedAccessToken = SymmetricEncrypt(userName) + ":" + HashString(accessToken);
+            user.HashedAccessToken = HashString(accessToken);
+            //al pp
             user.HashedRefreshToken = HashString(refreshToken);
 
             await _serviceContext.SaveChangesAsync();
@@ -139,7 +211,7 @@ namespace Logic.Logic
                 throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
             }
 
-            if (!VerifyHashedKey(token, user.HashedAccessToken.Split(':')[1]))
+            if (!VerifyHashedKey(token.Split(':')[1], user.HashedAccessToken))
             {
                 throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
             }
@@ -201,6 +273,7 @@ namespace Logic.Logic
             return new TokenValidationParameters()
             {
                 ValidateLifetime = true,
+                ClockSkew = new TimeSpan(Convert.ToInt32(_config["Jwt:ClockSkew"])),
                 ValidateAudience = true,
                 ValidateIssuer = true,
                 ValidIssuer = _config["Jwt:Issuer"],
