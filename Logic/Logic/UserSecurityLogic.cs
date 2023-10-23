@@ -259,7 +259,7 @@ namespace Logic.Logic
         {
             var tokenData = new JWTData(oldToken);
             var userData = new AuthenticationUserData(tokenData.UserName, tokenData.UserIdWeb, tokenData.UserRolName);
-            if (tokenData.ValidTo < DateTime.Now.AddMinutes(Convert.ToInt32(_config["Jwt:RefreshOn"]))){
+            if (tokenData.ValidTo < DateTime.Now.AddMinutes(-Convert.ToInt32(_config["Jwt:RefreshOn"]))){
                 var refreshedToken = GenerateJWTAuthenticationToken(tokenData);
                 return new AuthenticationTokenResponse(true, refreshedToken, userData);
             }
