@@ -1,8 +1,7 @@
 ﻿using API.Attributes;
 using API.IServices;
-using Entities.Models.Requests;
-using Entities.Models.Responses;
-using Logic.Exceptions;
+using Entities.Models.Requests.UserRequests;
+using Entities.Models.Responses.UserResponses;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -29,14 +28,14 @@ namespace API.Controllers
         [HttpPost(Name = "Login")]
         public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest loginRequest)
         {
-            LoginResponse response = await _userSecurityService.GenerateAccessBearerToken(loginRequest.UserName, loginRequest.UserPassword);
+            LoginResponse response = await _userSecurityService.GenerateRefreshBearerToken(loginRequest.UserName, loginRequest.UserPassword);
             return Ok(response);
         }
         [EndpointAuthorize(AllowsAnonymous = true)]
         [HttpPost(Name = "GenerateRefreshJWT")]
-        public async Task<ActionResult<string>> GenerateRefreshJWT([FromBody] RefreshTokenRequest refreshRequest)
+        public async Task<ActionResult<string>> GenerateRefreshJWT([FromBody] AccessTokenRequest refreshRequest)
         {
-            var response = await _userSecurityService.GenerateRefreshJWT(refreshRequest);
+            var response = await _userSecurityService.GenerateAccessJWT(refreshRequest);
             return Ok(response);
         }
     }

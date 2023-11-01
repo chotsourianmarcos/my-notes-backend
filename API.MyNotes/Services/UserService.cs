@@ -1,6 +1,6 @@
 ﻿using API.IServices;
 using Entities.Enums;
-using Entities.Models.Requests;
+using Entities.Models.Requests.UserRequests;
 using Logic.ILogic;
 
 namespace API.MyNotes.Services
@@ -18,7 +18,7 @@ namespace API.MyNotes.Services
         {
             var newUserItem = registerRequest.ToUserItem();
             newUserItem.IdRol = (int)UserRolEnum.Usuario;
-            newUserItem.HashedPassword = _userSecurityLogic.HashString(registerRequest.userPassword);
+            newUserItem.HashedPassword = _userSecurityLogic.HashString(registerRequest.UserPassword);
 
             await _userLogic.InsertUserAsync(newUserItem);
         }

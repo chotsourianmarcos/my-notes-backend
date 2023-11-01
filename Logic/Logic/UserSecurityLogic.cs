@@ -1,7 +1,8 @@
 ﻿using Data;
 using Entities.Entities;
 using Entities.Enums;
-using Entities.Models.Responses;
+using Entities.Models.DataModels;
+using Entities.Models.Responses.UserResponses;
 using Logic.Exceptions;
 using Logic.ILogic;
 using Microsoft.EntityFrameworkCore;
@@ -36,25 +37,6 @@ namespace Logic.Logic
         {
             try
             {
-                //byte[] initializationVector = Encoding.ASCII.GetBytes(_config["SymmetricEncryption:RandomInitializer"]);
-                //using (Aes aes = Aes.Create())
-                //{
-                //    aes.Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryption:Key"]);
-                //    aes.IV = initializationVector;
-                //    var symmetricEncryptor = aes.CreateEncryptor(aes.Key, aes.IV);
-                //    using (var memoryStream = new MemoryStream())
-                //    {
-                //        using (var cryptoStream = new CryptoStream(memoryStream as Stream,
-                //            symmetricEncryptor, CryptoStreamMode.Write))
-                //        {
-                //            using (var streamWriter = new StreamWriter(cryptoStream as Stream))
-                //            {
-                //                streamWriter.Write(data);
-                //            }
-                //            return Convert.ToBase64String(memoryStream.ToArray());
-                //        }
-                //    }
-                //}
                 using (var aes = new AesCryptoServiceProvider()
                 {
                     Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryption:Key"]),
@@ -62,7 +44,6 @@ namespace Logic.Logic
                     Padding = PaddingMode.PKCS7
                 })
                 {
-
                     var input = Encoding.UTF8.GetBytes(stringToEncrypt);
                     aes.GenerateIV();
                     var iv = aes.IV;
@@ -72,48 +53,25 @@ namespace Logic.Logic
                         using (var tCryptoStream = new CryptoStream(cipherStream, encrypter, CryptoStreamMode.Write))
                         using (var tBinaryWriter = new BinaryWriter(tCryptoStream))
                         {
-                            //Prepend IV to data
-                            //tBinaryWriter.Write(iv); This is the original broken code, it encrypts the iv
-                            cipherStream.Write(iv);  //Write iv to the plain stream (not tested though)
+                            cipherStream.Write(iv);
                             tBinaryWriter.Write(input);
                             tCryptoStream.FlushFinalBlock();
                         }
 
                         return Convert.ToBase64String(cipherStream.ToArray());
                     }
-
                 }
             }
             catch(Exception ex) 
             {
                 throw ex;
             }
-            
         }
         private string SymmetricDecrypt(string cipherString)
         {
             try
             {
                 byte[] input = Convert.FromBase64String(cipherString);
-                //byte[] initializationVector = Encoding.ASCII.GetBytes("SymmetricEncryption:RandomInitializer");
-                //byte[] buffer = Convert.FromBase64String(cipherText);
-                //using (Aes aes = Aes.Create())
-                //{
-                //    aes.Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryption:Key"]);
-                //    aes.IV = initializationVector;
-                //    var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-                //    using (var memoryStream = new MemoryStream(buffer))
-                //    {
-                //        using (var cryptoStream = new CryptoStream(memoryStream as Stream,
-                //            decryptor, CryptoStreamMode.Read))
-                //        {
-                //            using (var streamReader = new StreamReader(cryptoStream as Stream))
-                //            {
-                //                return streamReader.ReadToEnd();
-                //            }
-                //        }
-                //    }
-                //}
                 var aes = new AesCryptoServiceProvider()
                 {
                     Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryption:Key"]),
@@ -121,7 +79,6 @@ namespace Logic.Logic
                     Padding = PaddingMode.PKCS7
                 };
 
-                //get first 16 bytes of IV and use it to decrypt
                 var iv = new byte[16];
                 Array.Copy(input, 0, iv, 0, iv.Length);
 
@@ -130,7 +87,6 @@ namespace Logic.Logic
                     using (var cs = new CryptoStream(ms, aes.CreateDecryptor(aes.Key, iv), CryptoStreamMode.Write))
                     using (var binaryWriter = new BinaryWriter(cs))
                     {
-                        //Decrypt Cipher Text from Message
                         binaryWriter.Write(
                             input,
                             iv.Length,
@@ -145,7 +101,6 @@ namespace Logic.Logic
             {
                 throw ex;
             }
-            
         }
         private async Task<UserItem> BasicUserAuthentication(string userName, string userPassword)
         {
@@ -168,22 +123,20 @@ namespace Logic.Logic
 
             return user;
         }
-        public async Task<LoginResponse> GenerateAuthenticationBearerTokenAsync(string userName, string userPassword)
+        public async Task<LoginResponse> GenerateRefreshBearerToken(string userName, string userPassword)
         {
             var user = await BasicUserAuthentication(userName, userPassword);
 
-            var accessToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            var refreshToken = GenerateJWTAuthenticationToken(new JWTData(user));
+            var refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            var accessToken = GenerateJWTAuthenticationToken(new JWTData(user));
 
-            user.HashedAccessToken = HashString(accessToken);
-            //al pp
             user.HashedRefreshToken = HashString(refreshToken);
 
             await _serviceContext.SaveChangesAsync();
 
-            return new LoginResponse(user, SymmetricEncrypt(userName) + ":" + accessToken, refreshToken);
+            return new LoginResponse(user, SymmetricEncrypt(userName) + ":" + refreshToken, accessToken);
         }
-        public async Task<string> GenerateRefreshJWTFromAccessToken(Guid userIdWeb, string token)
+        public async Task<string> GenerateAccessJWT(Guid userIdWeb, string token)
         {
             var userName = "";
             try
@@ -211,7 +164,7 @@ namespace Logic.Logic
                 throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
             }
 
-            if (!VerifyHashedKey(token.Split(':')[1], user.HashedAccessToken))
+            if (!VerifyHashedKey(token.Split(':')[1], user.HashedRefreshToken))
             {
                 throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
             }
@@ -230,12 +183,12 @@ namespace Logic.Logic
                 new Claim("userIdWeb", jwtata.UserIdWeb),
                 new Claim("userRol", jwtata.UserRolName)
             };
+
             var token = new JwtSecurityToken(_config["Jwt:Issuer"],
                 _config["Jwt:Audience"],
                 claims,
                 expires: DateTime.Now.AddMinutes(Convert.ToInt32(_config["Jwt:ExpiracyAfter"])),
                 signingCredentials: credentials);
-
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
@@ -245,6 +198,7 @@ namespace Logic.Logic
             var validationParameters = GetJWTValidationParameters();
             SecurityToken validatedToken;
             var date = DateTime.Now;
+
             try
             {
                 IPrincipal principal = tokenHandler.ValidateToken(token, validationParameters, out validatedToken);
@@ -253,12 +207,14 @@ namespace Logic.Logic
             {
                 throw new AuthenticationException(AuthenticationExceptionType.ExpiredToken);
             }
+
             return RefreshJWTAuthenticationToken(token);
         }
         private AuthenticationTokenResponse RefreshJWTAuthenticationToken(string oldToken)
         {
             var tokenData = new JWTData(oldToken);
-            var userData = new AuthenticationUserData(tokenData.UserName, tokenData.UserIdWeb, tokenData.UserRolName);
+            var userData = new ResponseUserData(tokenData.UserName, tokenData.UserIdWeb, tokenData.UserRolName);
+
             if (tokenData.ValidTo < DateTime.Now.AddMinutes(-Convert.ToInt32(_config["Jwt:RefreshOn"]))){
                 var refreshedToken = GenerateJWTAuthenticationToken(tokenData);
                 return new AuthenticationTokenResponse(true, refreshedToken, userData);
@@ -284,6 +240,7 @@ namespace Logic.Logic
         public async Task<int> GetUserIdFromIdWeb(Guid idWeb)
         {
             var user = await _serviceContext.Users.Where(u => u.IdWeb == idWeb).FirstOrDefaultAsync();
+            
             if (user != null)
             {
                 return user.Id;

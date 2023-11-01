@@ -1,8 +1,7 @@
 ﻿using API.Attributes;
 using API.MyNotes.IServices;
 using Entities.Items;
-using Entities.Models.Requests;
-using Logic.Exceptions;
+using Entities.Models.Requests.NoteRequests;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -33,14 +32,14 @@ namespace API.Controllers
         }
         [EndpointAuthorize(AllowedUserRols = "Usuario")]
         [HttpPost(Name = "AddNote")]
-        public async Task<ActionResult<Guid>> AddNote([FromBody] AddUpdateNoteRequest newNoteRequest)
+        public async Task<ActionResult<Guid>> AddNote([FromBody] AddNoteRequest newNoteRequest)
         {
             var idWeb = await _noteService.AddNote(newNoteRequest);
             return Ok(idWeb);
         }
         [EndpointAuthorize(AllowedUserRols = "Usuario")]
         [HttpPatch(Name = "UpdateNote")]
-        public async Task<ActionResult> UpdateNote([FromBody] AddUpdateNoteRequest updateNoteRequest)
+        public async Task<ActionResult> UpdateNote([FromBody] UpdateNoteRequest updateNoteRequest)
         {
             await _noteService.UpdateNote(updateNoteRequest);
             return Ok();

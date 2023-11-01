@@ -10,12 +10,14 @@ namespace Logic.Logic
     public class NoteLogic : INoteLogic
     {
         private readonly ServiceContext _serviceContext;
+        private readonly IUserSessionAccessLogic _userSessionAccessLogic;
         private readonly ITagLogic _tagLogic;
         public NoteLogic(ServiceContext serviceContext,
-            ITagLogic tagLogic,
-            IUserSecurityLogic userSecurityLogic)
+            IUserSessionAccessLogic userSessionAccessLogic,
+            ITagLogic tagLogic)
         {
             _serviceContext = serviceContext;
+            _userSessionAccessLogic = userSessionAccessLogic;
             _tagLogic = tagLogic;
         }
         public async Task<Guid> AddNote(NoteItem noteItem)
@@ -41,7 +43,7 @@ namespace Logic.Logic
                 .Where(n => n.IdWeb == idWeb)
                 .FirstAsync();
 
-            if(noteItem.User.Id != UserSessionLogic.GetCurrentUserId())
+            if(noteItem.User.Id != await _userSessionAccessLogic.GetCurrentUserId())
             {
                 throw new BadRequestException(BadRequestExceptionType.InvalidOperation);
             }
@@ -52,14 +54,14 @@ namespace Logic.Logic
 
         public async Task<List<NoteItem>> GetAllNotes()
         {
-            return await _serviceContext.Notes.Where(n => n.User.IdWeb == UserSessionLogic.GetCurrentUserIdWeb() && n.IsActive).ToListAsync();
+            return await _serviceContext.Notes.Where(n => n.User.IdWeb == _userSessionAccessLogic.GetCurrentUserIdWeb() && n.IsActive).ToListAsync();
         }
 
         public async Task<List<NoteItem>> GetNotesByCriteria(NoteFilter noteFilter)
         {
             return await _serviceContext.Notes
                 .Include(n => n.Tags)
-                .Where(n => n.IsActive && n.User.IdWeb == UserSessionLogic.GetCurrentUserIdWeb())
+                .Where(n => n.IsActive && n.User.IdWeb == _userSessionAccessLogic.GetCurrentUserIdWeb())
                 .Where(noteFilter.ToFunction()).ToListAsync();
         }
 
@@ -76,7 +78,7 @@ namespace Logic.Logic
                 .Where(n => n.IdWeb == updatedNoteItem.IdWeb)
                 .FirstAsync();
 
-            if (noteItem.User.Id != UserSessionLogic.GetCurrentUserId())
+            if (noteItem.User.Id != await _userSessionAccessLogic.GetCurrentUserId())
             {
                 throw new BadRequestException(BadRequestExceptionType.InvalidOperation);
             }

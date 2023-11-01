@@ -10,4 +10,8 @@
             return true;
         }
     }
+    public static class TagConstants
+    {
+        public static readonly string IncludeAllTagsRef = "all";
+    }
 }

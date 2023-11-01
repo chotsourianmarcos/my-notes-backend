@@ -10,7 +10,6 @@ namespace Entities.Entities
         public string Name { get; set; }
         public string Email { get; set; }
         public string HashedPassword { get; set; }
-        public string HashedAccessToken { get; set; }
         public string HashedRefreshToken { get; set; }
         public int FailedLogins { get; set; }
         public DateTime InsertDate { get; set; }
@@ -22,5 +21,8 @@ namespace Entities.Entities
         {
             return true;
         }
+    }
+    public static class UserConstants {
+        public static readonly string NotGeneratedTokenValue = "NOT GENERATED";
     }
 }

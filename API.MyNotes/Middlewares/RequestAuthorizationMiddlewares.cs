@@ -1,11 +1,12 @@
 ﻿using API.Attributes;
 using API.IServices;
+using Entities.Enums;
 using Logic.Exceptions;
 using Logic.Logic;
 
 namespace API.Middlewares
 {
-    public class RequestAuthorizationMiddleware : UserSessionLogic
+    public class RequestAuthorizationMiddleware : UserSessionSetLogic
     {
         private readonly RequestDelegate _next;
         public RequestAuthorizationMiddleware(RequestDelegate next)
@@ -39,10 +40,9 @@ namespace API.Middlewares
                         throw new AuthenticationException(AuthenticationExceptionType.WrongCredentials);
                     }
 
-                    SetCurrentUserId(await userSecurityService.GetUserIdFromIdWeb(validationResponse.UserData.UserIdWeb));
                     SetCurrentUserName(validationResponse.UserData.UserName);
-                    SetCurrentUserIdWeb(validationResponse.UserData.UserIdWeb);
-                    SetCurrentUserIdRol(validationResponse.UserData.UserIdRol);
+                    SetCurrentUserIdWeb(Guid.Parse(validationResponse.UserData.UserIdWeb));
+                    SetCurrentUserIdRol((int)Enum.Parse(typeof(UserRolEnum), validationResponse.UserData.UserRolName));
 
                     await _next(httpContext);
                 }

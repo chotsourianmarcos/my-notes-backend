@@ -2,16 +2,17 @@
 using Entities.Items;
 using Logic.ILogic;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 
 namespace Logic.Logic
 {
     public class TagLogic : ITagLogic
     {
         private readonly ServiceContext _serviceContext;
-        public TagLogic(ServiceContext serviceContext) 
+        private readonly IUserSessionAccessLogic _userSessionLogic;
+        public TagLogic(ServiceContext serviceContext, IUserSessionAccessLogic userSessionLogic) 
         {
             _serviceContext = serviceContext;
+            _userSessionLogic = userSessionLogic;
         }
 
         public async Task<List<TagItem>> SetCurrentTags(List<TagItem> tagList)
@@ -54,8 +55,9 @@ namespace Logic.Logic
 
         public async Task<List<string>> GetAllTags()
         {
+            var userId = await _userSessionLogic.GetCurrentUserId();
             var allNotes = await _serviceContext.Notes
-                .Where(n => n.UserId == UserSessionLogic.GetCurrentUserId() && n.IsActive)
+                .Where(n => n.UserId == userId && n.IsActive)
                 .Include(n => n.Tags)
                 .ToListAsync();
             var userTags = new List<TagItem>();

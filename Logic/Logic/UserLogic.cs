@@ -33,8 +33,7 @@ namespace Logic.Logic
                 throw new AuthenticationException(AuthenticationExceptionType.RolNotAuthorized);
             }
 
-            userItem.HashedAccessToken = "NOT GENERATED";
-            userItem.HashedRefreshToken = "NOT GENERATED";
+            userItem.HashedRefreshToken = UserConstants.NotGeneratedTokenValue;
             
             await _serviceContext.Users.AddAsync(userItem);
 

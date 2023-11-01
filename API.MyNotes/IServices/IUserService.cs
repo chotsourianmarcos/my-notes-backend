@@ -1,4 +1,4 @@
-﻿using Entities.Models.Requests;
+﻿using Entities.Models.Requests.UserRequests;
 
 namespace API.IServices
 {

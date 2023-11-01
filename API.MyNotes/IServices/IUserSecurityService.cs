@@ -1,13 +1,12 @@
-﻿using Entities.Models.Requests;
-using Entities.Models.Responses;
+﻿using Entities.Models.Requests.UserRequests;
+using Entities.Models.Responses.UserResponses;
 
 namespace API.IServices
 {
     public interface IUserSecurityService
     {
-        Task<LoginResponse> GenerateAccessBearerToken(string userName, string userPassword);
+        Task<LoginResponse> GenerateRefreshBearerToken(string userName, string userPassword);
         AuthenticationTokenResponse AuthenticateJWTToken(string authorization, List<string> allowedUserRols);
-        Task<int> GetUserIdFromIdWeb(Guid idWeb);
-        Task<string> GenerateRefreshJWT(RefreshTokenRequest accessToken);
+        Task<string> GenerateAccessJWT(AccessTokenRequest accessToken);
     }
 }

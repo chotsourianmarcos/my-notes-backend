@@ -1,6 +1,5 @@
 ﻿using API.Attributes;
 using API.MyNotes.IServices;
-using Logic.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers

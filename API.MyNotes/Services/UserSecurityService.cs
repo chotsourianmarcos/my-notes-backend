@@ -1,9 +1,8 @@
 ﻿using API.IServices;
-using Entities.Models.Requests;
-using Entities.Models.Responses;
+using Entities.Models.Requests.UserRequests;
+using Entities.Models.Responses.UserResponses;
 using Logic.Exceptions;
 using Logic.ILogic;
-using Logic.Logic;
 
 namespace API.MyNotes.Services
 {
@@ -14,9 +13,9 @@ namespace API.MyNotes.Services
         {
             _userSecurityLogic = userSecurityLogic;
         }
-        public async Task<LoginResponse> GenerateAccessBearerToken(string userName, string userPassword)
+        public async Task<LoginResponse> GenerateRefreshBearerToken(string userName, string userPassword)
         {
-            return await _userSecurityLogic.GenerateAuthenticationBearerTokenAsync(userName, userPassword);
+            return await _userSecurityLogic.GenerateRefreshBearerToken(userName, userPassword);
         }
         public AuthenticationTokenResponse AuthenticateJWTToken(string authorization, List<string> allowedUserRols)
         {
@@ -35,13 +34,9 @@ namespace API.MyNotes.Services
         {
             return authorization.Split(' ')[1];
         }
-        public async Task<int> GetUserIdFromIdWeb(Guid idWeb)
+        public async Task<string> GenerateAccessJWT(AccessTokenRequest request)
         {
-            return await _userSecurityLogic.GetUserIdFromIdWeb(idWeb);
-        }
-        public async Task<string> GenerateRefreshJWT(RefreshTokenRequest request)
-        {
-            return await _userSecurityLogic.GenerateRefreshJWTFromAccessToken(request.UserIdWeb, request.AccessToken);
+            return await _userSecurityLogic.GenerateAccessJWT(request.UserIdWeb, request.AccessToken);
         }
     }
 }
