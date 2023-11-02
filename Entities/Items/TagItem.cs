@@ -1,4 +1,5 @@
-﻿using Resources.Strings.ErrorMessages;
+﻿using Logic.Exceptions;
+using Resources.Strings.ErrorMessages;
 using System.ComponentModel.DataAnnotations;
 
 namespace Entities.Items
@@ -15,7 +16,7 @@ namespace Entities.Items
             var validDataAnnotations = ValidateDataAnnotations(this);
             if (!validDataAnnotations.IsSuccess)
             {
-                throw new Exception(validDataAnnotations.ErrorsToString());
+                throw new InvalidModelException(InvalidModelExceptionType.InvalidDataModel, validDataAnnotations.ErrorsToString());
             }
             else
             {

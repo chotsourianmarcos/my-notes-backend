@@ -17,13 +17,13 @@ namespace API.Middlewares
             {
                 await _next(httpContext);
             }
-            catch(ControlledException ex)
+            catch(LogicControlledException ex)
             {
                 await HandleControlledExceptionAsync(httpContext, ex);
             }
             
         }
-        private async Task HandleControlledExceptionAsync(HttpContext context, ControlledException ex)
+        private async Task HandleControlledExceptionAsync(HttpContext context, LogicControlledException ex)
         {
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)ex.HttpResponseMessage.StatusCode;

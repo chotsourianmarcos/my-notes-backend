@@ -1,8 +1,10 @@
-﻿namespace Logic.Exceptions
+﻿using Entities.Exceptions;
+
+namespace Logic.Exceptions
 {
     public enum InvalidModelExceptionType
     {
-        InvalidDataAnnotations = 1
+        InvalidDataModel = 1
     }
     public class InvalidModelExceptionResp : HttpResponseMessage
     {
@@ -10,7 +12,7 @@
         {
             switch ((int)type)
             {
-                case (int)InvalidModelExceptionType.InvalidDataAnnotations:
+                case (int)InvalidModelExceptionType.InvalidDataModel:
                     this.StatusCode = System.Net.HttpStatusCode.InternalServerError;
                     this.Content = new StringContent("Unexpected invalid data model.");
                     this.ReasonPhrase = "Invalid data model.";
@@ -29,7 +31,7 @@
             }
         }
     }
-    public class InvalidModelException : ControlledException
+    public class InvalidModelException : EntityControlledException
     {
         public InvalidModelException(InvalidModelExceptionType type, string customMessage = "", string errorCode = "") : base(new InvalidModelExceptionResp(type, customMessage, errorCode))
         {

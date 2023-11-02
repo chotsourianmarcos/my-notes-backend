@@ -25,10 +25,7 @@ namespace Logic.Logic
             var currentTags = await _tagLogic.SetCurrentTags(noteItem.Tags.ToList());
             noteItem.Tags = currentTags;
 
-            if (!noteItem.ValidateModel(true))
-            {
-                throw new BadRequestException(BadRequestExceptionType.InvalidData);
-            }
+            noteItem.ValidateModel(true);
 
             await _serviceContext.Notes.AddAsync(noteItem);
             await _serviceContext.SaveChangesAsync();
@@ -67,10 +64,7 @@ namespace Logic.Logic
 
         public async Task UpdateNote(NoteItem updatedNoteItem)
         {
-            if (!updatedNoteItem.ValidateModel(false))
-            {
-                throw new BadRequestException(BadRequestExceptionType.InvalidData);
-            }
+            updatedNoteItem.ValidateModel(false);
 
             var noteItem = await _serviceContext.Notes
                 .Include(n => n.User)

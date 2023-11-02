@@ -53,7 +53,7 @@
             }
         }
     }
-    public class AuthenticationException : ControlledException
+    public class AuthenticationException : LogicControlledException
     {
         public AuthenticationException(AuthenticationExceptionType type, string customMessage = "", string errorCode = "") : base(new BadAuthenticationResp(type, customMessage, errorCode))
         {

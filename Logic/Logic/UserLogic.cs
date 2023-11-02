@@ -17,10 +17,7 @@ namespace Logic.Logic
 
         public async Task InsertUserAsync(UserItem userItem)
         {
-            if (!userItem.ValidateModel(true))
-            {
-                throw new BadRequestException(BadRequestExceptionType.InvalidData);
-            }
+            userItem.ValidateModel(true);
 
             var repeated = await ValidateRepetedUser(userItem);
             if (repeated)

@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace Logic.Exceptions
+namespace Entities.Exceptions
 {
-    public class ControlledException : Exception
+    public class EntityControlledException : Exception
     {
         public HttpResponseMessage HttpResponseMessage { get; set; }
-        public ControlledException(HttpResponseMessage resp)
+        public EntityControlledException(HttpResponseMessage resp)
         {
             HttpResponseMessage = resp;
         }
@@ -18,7 +18,7 @@ namespace Logic.Exceptions
             };
 
             ObjectResult objectResult = new ObjectResult(data);
-            objectResult.StatusCode = (int) HttpResponseMessage.StatusCode;
+            objectResult.StatusCode = (int)HttpResponseMessage.StatusCode;
 
             return objectResult;
         }

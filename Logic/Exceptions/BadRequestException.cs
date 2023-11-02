@@ -41,7 +41,7 @@
             }
         }
     }
-    public class BadRequestException : ControlledException
+    public class BadRequestException : LogicControlledException
     {
         public BadRequestException(BadRequestExceptionType type, string customMessage = "", string errorCode = "") : base(new BadRequestResp(type, customMessage, errorCode))
         {
