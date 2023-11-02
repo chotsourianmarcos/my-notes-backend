@@ -18,4 +18,4 @@
 <p>Frontend hosted in https://my-notes-mc-frontend-a0fc6ad0aa34.herokuapp.com</p>
 
 <h3>Further objectives</h3>
-<p>To be chosen.</p>
+<p>In progress.</p>
