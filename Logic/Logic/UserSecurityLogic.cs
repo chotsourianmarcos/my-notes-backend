@@ -1,6 +1,5 @@
 ﻿using Data;
 using Entities.Entities;
-using Entities.Enums;
 using Entities.Models.DataModels;
 using Entities.Models.Responses.UserResponses;
 using Logic.Exceptions;
@@ -69,37 +68,30 @@ namespace Logic.Logic
         }
         private string SymmetricDecrypt(string cipherString)
         {
-            try
+            byte[] input = Convert.FromBase64String(cipherString);
+            var aes = new AesCryptoServiceProvider()
             {
-                byte[] input = Convert.FromBase64String(cipherString);
-                var aes = new AesCryptoServiceProvider()
+                Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryption:Key"]),
+                Mode = CipherMode.CBC,
+                Padding = PaddingMode.PKCS7
+            };
+
+            var iv = new byte[16];
+            Array.Copy(input, 0, iv, 0, iv.Length);
+
+            using (var ms = new MemoryStream())
+            {
+                using (var cs = new CryptoStream(ms, aes.CreateDecryptor(aes.Key, iv), CryptoStreamMode.Write))
+                using (var binaryWriter = new BinaryWriter(cs))
                 {
-                    Key = Encoding.UTF8.GetBytes(_config["SymmetricEncryption:Key"]),
-                    Mode = CipherMode.CBC,
-                    Padding = PaddingMode.PKCS7
-                };
-
-                var iv = new byte[16];
-                Array.Copy(input, 0, iv, 0, iv.Length);
-
-                using (var ms = new MemoryStream())
-                {
-                    using (var cs = new CryptoStream(ms, aes.CreateDecryptor(aes.Key, iv), CryptoStreamMode.Write))
-                    using (var binaryWriter = new BinaryWriter(cs))
-                    {
-                        binaryWriter.Write(
-                            input,
-                            iv.Length,
-                            input.Length - iv.Length
-                        );
-                    }
-
-                    return Encoding.Default.GetString(ms.ToArray());
+                    binaryWriter.Write(
+                        input,
+                        iv.Length,
+                        input.Length - iv.Length
+                    );
                 }
-            }
-            catch(Exception ex)
-            {
-                throw ex;
+
+                return Encoding.Default.GetString(ms.ToArray());
             }
         }
         private async Task<UserItem> BasicUserAuthentication(string userName, string userPassword)
@@ -250,36 +242,5 @@ namespace Logic.Logic
                 return 0;
             }
         }
-    }
-    public class JWTData
-    {
-        public JWTData(UserItem user)
-        {
-            UserName = user.Name;
-            UserIdWeb = user.IdWeb.ToString();
-            UserRolName = ((UserRolEnum)user.IdRol).ToString();
-        }
-        public JWTData(string userName, string userIdWeb, string userRolName)
-        {
-            UserName = userName;
-            UserIdWeb = userIdWeb;
-            UserRolName = userRolName;
-        }
-        public JWTData(string jwtoken)
-        {
-            var handler = new JwtSecurityTokenHandler();
-            var decodedValue = handler.ReadJwtToken(jwtoken);
-
-            var claims = decodedValue.Claims;
-            this.UserName = decodedValue.Claims.First(c => c.Type == "userName").Value;
-            this.UserIdWeb = decodedValue.Claims.First(c => c.Type == "userIdWeb").Value;
-            this.UserRolName = decodedValue.Claims.First(c => c.Type == "userRol").Value;
-
-            this.ValidTo = decodedValue.ValidTo;
-        }
-        public string UserName { get; set; }
-        public string UserIdWeb { get; set; }
-        public string UserRolName { get; set; }
-        public DateTime ValidTo { get; set; }
     }
 }

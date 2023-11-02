@@ -4,7 +4,7 @@ using Microsoft.OpenApi.Models;
 using API.MyNotes.Dependencies;
 using API.Middlewares;
 
-var AllowWebUIOrigin = "_allowWebUIOrigin";
+const string AllowWebUIOrigin = "_allowWebUIOrigin";
 
 var builder = WebApplication.CreateBuilder(args);
 

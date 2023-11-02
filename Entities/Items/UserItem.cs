@@ -1,4 +1,5 @@
-﻿using Entities.Items;
+﻿using Entities.Enums;
+using Entities.Items;
 
 namespace Entities.Entities
 {

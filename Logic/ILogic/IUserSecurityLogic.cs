@@ -1,5 +1,4 @@
-﻿
-using Entities.Models.Responses.UserResponses;
+﻿using Entities.Models.Responses.UserResponses;
 
 namespace Logic.ILogic
 {

@@ -1,8 +1,4 @@
-﻿using Data;
-using Logic.ILogic;
-using Microsoft.EntityFrameworkCore;
-
-namespace Logic.Logic
+﻿namespace Logic.Logic
 {
     public class UserSessionSetLogic
     {
