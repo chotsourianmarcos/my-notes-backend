@@ -8,8 +8,8 @@ namespace Entities.Models.Requests.NoteRequests
         {
             TagsNames = new List<string>();
         }
-        public string NoteIdWeb { get; set; }
-        public string Content { get; set; }
+        public string NoteIdWeb { get; set; } = "";
+        public string Content { get; set; } = "";
         public List<string> TagsNames { get; set; }
         public bool IsArchived { get; set; }
 
@@ -17,9 +17,7 @@ namespace Entities.Models.Requests.NoteRequests
         {
             var noteItem = new NoteItem();
 
-            noteItem.IdWeb = Guid.Parse(NoteIdWeb);
             noteItem.UserId = userId;
-
             var tags = new List<TagItem>();
             foreach (var n in TagsNames)
             {

@@ -43,7 +43,7 @@
     }
     public class BadRequestException : ControlledException
     {
-        public BadRequestException(BadRequestExceptionType type) : base (new BadRequestResp(type))
+        public BadRequestException(BadRequestExceptionType type, string customMessage = "", string errorCode = "") : base(new BadRequestResp(type, customMessage, errorCode))
         {
 
         }

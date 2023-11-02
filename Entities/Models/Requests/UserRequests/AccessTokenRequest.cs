@@ -2,7 +2,7 @@
 {
     public class AccessTokenRequest
     {
-        public string AccessToken { get; set; }
+        public string AccessToken { get; set; } = "";
         public Guid UserIdWeb { get; set; }
     }
 }

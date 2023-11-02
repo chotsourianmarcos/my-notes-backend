@@ -55,7 +55,7 @@
     }
     public class AuthenticationException : ControlledException
     {
-        public AuthenticationException(AuthenticationExceptionType type) : base(new BadAuthenticationResp(type))
+        public AuthenticationException(AuthenticationExceptionType type, string customMessage = "", string errorCode = "") : base(new BadAuthenticationResp(type, customMessage, errorCode))
         {
 
         }

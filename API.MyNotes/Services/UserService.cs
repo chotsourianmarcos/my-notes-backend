@@ -16,10 +16,10 @@ namespace API.MyNotes.Services
         }
         public async Task UserRegister(UserRegisterRequest registerRequest)
         {
-            var newUserItem = registerRequest.ToUserItem();
+            var hashedPassword = _userSecurityLogic.HashString(registerRequest.UserPassword);
+            var newUserItem = registerRequest.ToUserItem(hashedPassword);
             newUserItem.IdRol = (int)UserRolEnum.Usuario;
-            newUserItem.HashedPassword = _userSecurityLogic.HashString(registerRequest.UserPassword);
-
+            
             await _userLogic.InsertUserAsync(newUserItem);
         }
     }

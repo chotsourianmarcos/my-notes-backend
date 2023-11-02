@@ -24,6 +24,7 @@ namespace Logic.Logic
             {
                 if(!existingTagsList.Select(e => e.Name).Contains(t.Name))
                 {
+                    t.ValidateModel(true);
                     existingTagsList.Add(t);
                 }
             }

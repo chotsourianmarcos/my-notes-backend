@@ -6,7 +6,7 @@ namespace Entities.Models.Requests.NoteRequests
     public class GetNotesByCriteriaRequest
     {
         public Guid UserIdWeb { get; set; }
-        public string TagsIncluded { get; set; }
+        public string TagsIncluded { get; set; } = "";
         public bool IsArchived { get; set; }
         public NoteFilter ToNoteFilter()
         {

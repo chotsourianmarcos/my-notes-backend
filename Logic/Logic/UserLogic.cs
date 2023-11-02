@@ -17,7 +17,7 @@ namespace Logic.Logic
 
         public async Task InsertUserAsync(UserItem userItem)
         {
-            if (!userItem.ValidateValues(true, true))
+            if (!userItem.ValidateModel(true))
             {
                 throw new BadRequestException(BadRequestExceptionType.InvalidData);
             }
@@ -33,7 +33,7 @@ namespace Logic.Logic
                 throw new AuthenticationException(AuthenticationExceptionType.RolNotAuthorized);
             }
 
-            userItem.HashedRefreshToken = UserConstants.NotGeneratedTokenValue;
+            userItem.HashedRefreshToken = UserConstants.NotGeneratedValue;
             
             await _serviceContext.Users.AddAsync(userItem);
 

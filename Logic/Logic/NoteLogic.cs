@@ -25,7 +25,7 @@ namespace Logic.Logic
             var currentTags = await _tagLogic.SetCurrentTags(noteItem.Tags.ToList());
             noteItem.Tags = currentTags;
 
-            if (!noteItem.ValidateValues(true, true))
+            if (!noteItem.ValidateModel(true))
             {
                 throw new BadRequestException(BadRequestExceptionType.InvalidData);
             }
@@ -67,7 +67,7 @@ namespace Logic.Logic
 
         public async Task UpdateNote(NoteItem updatedNoteItem)
         {
-            if (!updatedNoteItem.ValidateValues(false, true))
+            if (!updatedNoteItem.ValidateModel(false))
             {
                 throw new BadRequestException(BadRequestExceptionType.InvalidData);
             }
